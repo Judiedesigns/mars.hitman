@@ -220,7 +220,7 @@ body{ cursor: default; user-select: none; -webkit-user-select: none; }
   transition: opacity 650ms ease;
 }
 .c-v.is-on{ opacity: 1; }
-.c-who{
+.c-who{ display:none;
   color: var(--ink-30);
   letter-spacing: 0.07em;
   white-space: nowrap;
@@ -651,8 +651,8 @@ var CODA = "You love me like my sisters, unconditionally";
       return v;
     }
 
-    var va = voice(PEOPLE.a, e.a), vb = voice(PEOPLE.b, e.b);
-    vs.appendChild(va); vs.appendChild(vb);
+    var va = voice(PEOPLE.a, e.a), vb = voice("", "");
+    vs.appendChild(va);
 
     wrap.appendChild(p);
     wrap.appendChild(vs);
@@ -665,7 +665,7 @@ var CODA = "You love me like my sisters, unconditionally";
   ENTRIES.forEach(function(e, i){ (i < 12 ? inner1 : inner2).appendChild(buildCredit(e)); });
 
   document.getElementById("names").innerHTML =
-    esc(PEOPLE.a) + "<br>" + esc(PEOPLE.b);
+    esc(PEOPLE.a) + " &rarr; " + esc(PEOPLE.b);
 
   function esc(s){
     return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -693,7 +693,7 @@ var CODA = "You love me like my sisters, unconditionally";
      moves once both have spoken.
      ================================================================ */
 
-  var P_MAX = N * 2;
+  var P_MAX = N;            /* one voice: one press sets one line */
   var p = 0;
 
   var head1 = document.getElementById("head-1");
@@ -703,18 +703,17 @@ var CODA = "You love me like my sisters, unconditionally";
 
   function render(){
     var done = (p >= P_MAX);
-    var stop = done ? N : Math.floor(p / 2) + 1;     /* 1..24 */
+    var stop = done ? N : p + 1;                     /* 1..24 */
 
     creditEls.forEach(function(c, i){
       var n = i + 1;
-      c.prompt.classList.toggle("is-on", p >= (n - 1) * 2);
-      c.a.classList.toggle("is-on", p >= n * 2 - 1);
-      c.b.classList.toggle("is-on", p >= n * 2);
+      c.prompt.classList.toggle("is-on", p >= n - 1);
+      c.a.classList.toggle("is-on", p >= n);
       c.wrap.classList.toggle("is-now", !done && n === stop);
     });
 
     head1.classList.toggle("is-on", true);
-    head2.classList.toggle("is-on", p >= 24);
+    head2.classList.toggle("is-on", p >= 12);
 
     tickEls.forEach(function(t, i){
       t.classList.toggle("is-on", i + 1 <= stop);
@@ -726,8 +725,7 @@ var CODA = "You love me like my sisters, unconditionally";
     sq.classList.toggle("is-on", done);
 
     uiCount.innerHTML = "<b>" + pad2(stop) + "</b> / 24";
-    uiTurn.textContent = done ? "the sheet is set"
-                              : (p % 2 === 0 ? PEOPLE.a + " speaks" : PEOPLE.b + " speaks");
+    uiTurn.textContent = done ? "the sheet is set" : "";
   }
 
   function step(n){

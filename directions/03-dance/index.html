@@ -156,6 +156,7 @@ body{ cursor:pointer; }
 @media (prefers-reduced-motion:reduce){
   .voice{ transition:opacity .25s ease; transform:none; }
 }
+  #v-b, .who { display: none !important; }
 </style>
 </head>
 <body>
@@ -304,7 +305,7 @@ var ROOT_Y2 = 196.00;   /* G3 — up a fourth, the year-two lift */
 
 var S = {
   i: 0,          /* month index, 0..23                  */
-  stage: 0,      /* 0 nobody spoke, 1 me, 2 both        */
+  stage: 0,      /* 0 nothing said yet, 2 this month said. one voice only. */
   started: false,
   muted: false,
   audio: true    /* false if the browser gave us nothing */
@@ -959,7 +960,6 @@ function render(){
   elCount.innerHTML = S.started ? "<b>" + two(e.n) + "</b> / 24" : "— / 24";
 
   if (S.stage >= 1){ say(elSA, e.a); elVA.classList.add("is-in"); } else elVA.classList.remove("is-in");
-  if (S.stage >= 2){ say(elSB, e.b); elVB.classList.add("is-in"); } else elVB.classList.remove("is-in");
 
   for (var i = 0; i < 24; i++){
     var on = S.started && i <= S.i;
@@ -972,19 +972,15 @@ function render(){
     elHint.textContent = "press space to begin — or click anywhere";
   } else if (S.i === 23 && S.stage === 2){
     elHint.textContent = "twenty-four voices. this is the whole thing.";
-  } else if (S.stage === 1){
-    elHint.textContent = "press again — " + PEOPLE.b + " answers";
-  } else if (S.stage === 2){
-    elHint.textContent = "press to go on — the music takes another voice";
   } else {
-    elHint.textContent = PEOPLE.a + " speaks first — press";
+    elHint.textContent = "press to go on — the music takes another voice";
   }
 }
 
 function advance(){
   if (!S.started){
     S.started = true;
-    S.stage = 1;
+    S.stage = 2;
     elOpen.classList.add("gone");
     if (!A) initAudio();
     if (A && A.state !== "running" && A.resume) A.resume();
@@ -997,15 +993,14 @@ function advance(){
     render();
     return;
   }
-  if (S.stage === 1){ S.stage = 2; pressTick(); render(); return; }
-  if (S.i < 23){ S.i++; S.stage = 1; rampMaster(); soundLayer(S.i); render(); }
-  else { S.stage = 2; pressTick(); render(); }
+  if (S.i < 23){ S.i++; S.stage = 2; pressTick(); rampMaster(); soundLayer(S.i); render(); }
+  else { pressTick(); render(); }
 }
 
-function goto(i, stage){
+function goto(i){
   S.i = Math.max(0, Math.min(23, i));
-  S.stage = stage;
-  if (!S.started){ advance(); S.i = Math.max(0, Math.min(23, i)); S.stage = stage; }
+  S.stage = 2;
+  if (!S.started){ advance(); S.i = Math.max(0, Math.min(23, i)); S.stage = 2; }
   rampMaster(); soundLayer(S.i); render();
 }
 
