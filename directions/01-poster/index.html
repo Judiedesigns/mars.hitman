@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>twenty-four — poster</title>
+<style>
+/* ------------------------------------------------------------------
+   twenty-four — direction 01, "the poster"
+
+   An exhibition sheet that happens to be alive. One generated line
+   wanders the upper field and crosses itself; twenty-four hairline
+   ticks sit on it. Everything said accumulates below as a credit
+   block, in type small enough to be fine print, until the sheet is
+   fully set. All interface lives OFF the sheet, on the surface, and
+   is gone when you print.
+
+   Geometry is written in a 566 x 800 design space (A3 portrait) and
+   scaled by --k. Positions are percentages; type is design px * k.
+------------------------------------------------------------------ */
+
+:root{
+  --surface:  #dcdad4;
+  --sheet:    #fdfdfc;
+  --ink:      #131316;
+  --ink-70:   #4b4a50;
+  --ink-45:   #86847f;
+  --ink-30:   #a9a7a1;
+  --line:     #9b9994;
+  --rule:     #c9c7c1;
+  --accent:   #c2401d;      /* used exactly once: the closing square */
+
+  --sans: "Inter", "Helvetica Neue", Helvetica, Arial, "Liberation Sans", sans-serif;
+
+  --k: 1;                    /* sheet scale, set by script */
+  --cfs: 7.2;                /* credit type size in design px, fitted */
+}
+
+*{ box-sizing: border-box; }
+
+html,body{
+  height:100%;
+  margin:0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;
+}
+body{ cursor: default; user-select: none; -webkit-user-select: none; }
+
+/* ---------- the surface ---------- */
+
+#surface{
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 44px;
+}
+
+/* ---------- the sheet ---------- */
+
+#sheet{
+  position: relative;
+  width:  calc(566px * var(--k));
+  height: calc(800px * var(--k));
+  background: var(--sheet);
+  box-shadow:
+     0 1px 1px rgba(0,0,0,.07),
+     0 10px 34px rgba(0,0,0,.09);
+}
+
+/* ---------- title, flush right, top right ---------- */
+
+#title{
+  position: absolute;
+  right: 7.42%;
+  top: 4.9%;
+  text-align: right;
+  line-height: 1.02;
+}
+#title h1{
+  margin: 0;
+  font-size: calc(27px * var(--k));
+  font-weight: 300;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+}
+#title .dates{
+  margin-top: calc(11px * var(--k));
+  font-size: calc(8.2px * var(--k));
+  font-weight: 400;
+  letter-spacing: 0.035em;
+  line-height: 1.55;
+  color: var(--ink-70);
+}
+
+/* ---------- the field: one line, twenty-four ticks ---------- */
+
+#field{
+  position: absolute;
+  left: 7.42%;
+  width: 85.16%;
+  top: 12%;
+  aspect-ratio: 482 / 258;
+  display: block;
+  overflow: visible;
+}
+
+#line{
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 0.95;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke-dashoffset 1100ms cubic-bezier(.32,.02,.16,1);
+}
+
+.tick{
+  stroke: var(--ink-30);
+  stroke-width: 0.6;
+  stroke-linecap: butt;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+.tick.is-on{ opacity: 1; }
+.tick.is-now{ stroke: var(--ink); stroke-width: 0.75; opacity: 1; }
+
+#terminus{
+  fill: var(--sheet);
+  stroke: var(--accent);
+  stroke-width: 0.8;
+  opacity: 0;
+  transition: opacity 900ms ease 500ms;
+}
+#terminus.is-on{ opacity: 1; }
+
+/* ---------- year heads ---------- */
+
+.head{
+  position: absolute;
+  top: 45.4%;
+  font-size: calc(6.8px * var(--k));
+  font-weight: 400;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+  color: var(--ink-45);
+  opacity: 0;
+  transition: opacity 800ms ease;
+}
+.head.is-on{ opacity: 1; }
+#head-1{ left: 7.42%; }
+#head-2{ left: 53.53%; }
+
+/* ---------- the credit block ---------- */
+
+.col{
+  position: absolute;
+  top: 47.5%;
+  height: 41.5%;
+  width: 39.05%;               /* 221 of 566 */
+}
+#col-1{ left: 7.42%; }
+#col-2{ left: 53.53%; }
+
+.col-inner{
+  font-size: calc(var(--cfs) * 1px * var(--k));
+  line-height: 1.38;
+}
+
+.credit{
+  position: relative;
+  padding-left: 2.5em;
+  margin-bottom: 1.05em;
+}
+.credit:last-child{ margin-bottom: 0; }
+
+.credit.is-now::before{
+  content: "";
+  position: absolute;
+  left: 0.55em;
+  top: 0.2em;
+  bottom: 0.2em;
+  width: 1px;
+  background: var(--ink);
+}
+
+.c-num{
+  position: absolute;
+  left: 0;
+  color: var(--ink-45);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.c-prompt{
+  color: var(--ink-45);
+  letter-spacing: 0.005em;
+  opacity: 0;
+  transition: opacity 650ms ease;
+}
+.c-prompt.is-on{ opacity: 1; }
+
+.c-voices{
+  display: flex;
+  gap: 1.4em;
+  margin-top: 0.32em;
+}
+.c-v{
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.55em;
+  opacity: 0;
+  transition: opacity 650ms ease;
+}
+.c-v.is-on{ opacity: 1; }
+.c-who{
+  color: var(--ink-30);
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+.c-rule{
+  flex: 1 1 auto;
+  height: 0.82em;
+  border-bottom: 1px solid var(--rule);
+}
+.c-said{
+  flex: 1 1 auto;
+  color: var(--ink);
+  min-width: 0;
+}
+
+/* ---------- names bottom left, imprint bottom right ---------- */
+
+#names{
+  position: absolute;
+  left: 7.42%;
+  top: 91.4%;
+  font-size: calc(9.6px * var(--k));
+  line-height: 1.62;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+#imprint{
+  position: absolute;
+  right: 7.42%;
+  top: 91.4%;
+  text-align: right;
+  font-size: calc(8px * var(--k));
+  line-height: 1.62;
+  letter-spacing: 0.02em;
+  color: var(--ink-70);
+}
+
+/* ---------- interface, off the sheet ---------- */
+
+#ui{
+  position: fixed;
+  left: 0; right: 0;
+  bottom: calc((100vh - 44px - 800px * var(--k)) / 2 - 9px);
+  text-align: center;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #a4a29c;
+  pointer-events: none;
+}
+#ui span{ margin: 0 0.75em; }
+#ui b{ font-weight: 500; color: #86847e; }
+
+/* ---------- phone: the sheet becomes a scrolling column ---------- */
+
+@media (max-width: 640px){
+  html,body{ overflow: auto; }
+  #surface{ position: static; display: block; padding: 16px 16px 64px; }
+  #sheet{
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding-bottom: 28px;
+  }
+  #title{ position: static; padding: 26px 20px 0; }
+  #field{ position: static; width: auto; margin: 22px 20px 0; }
+  .head{ position: static; margin: 26px 20px 8px; opacity: 0; }
+  #head-2{ margin-top: 22px; }
+  .col{ position: static; width: auto; height: auto; margin: 0 20px; }
+  .col-inner{ font-size: 10.5px; line-height: 1.42; }
+  #names, #imprint{ position: static; margin: 26px 20px 0; text-align: left; font-size: 12px; }
+  #imprint{ font-size: 10px; margin-top: 12px; }
+  #title h1{ font-size: 26px; }
+  #title .dates{ font-size: 10px; }
+  #ui{
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 12px 0 14px;
+    background: var(--surface);
+    border-top: 1px solid #cfcdc7;
+  }
+}
+
+/* ---------- reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce){
+  #line, .tick, #terminus, .c-prompt, .c-v, .head{
+    transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* ---------- print: the finished sheet, no interface ---------- */
+
+@page{ size: A3 portrait; margin: 0; }
+
+@media print{
+  html,body{ background: #fff; overflow: visible; height: auto; }
+  #surface{ position: static; display: block; padding: 0; }
+  #ui{ display: none !important; }
+
+  #sheet{
+    --k: 1.983;                 /* 566 design units -> 297mm at 96dpi */
+    width: 297mm;
+    height: 420mm;
+    box-shadow: none;
+    background: #fff;
+    page-break-after: avoid;
+  }
+
+  /* the sheet prints finished, ruled and empty, to be filled in by hand */
+  #line{ stroke-dashoffset: 0 !important; }
+  .tick{ opacity: 1 !important; }
+  #terminus{ opacity: 1 !important; fill: #fff; }
+  .head, .c-prompt, .c-v{ opacity: 1 !important; }
+  .credit.is-now::before{ display: none; }
+
+  *{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+
+<div id="surface">
+  <div id="sheet">
+
+    <div id="title">
+      <h1>twenty-four</h1>
+      <div class="dates">month 01 &mdash;<br>month 24</div>
+    </div>
+
+    <svg id="field" viewBox="0 0 482 258" preserveAspectRatio="xMidYMid meet"
+         aria-label="one continuous line with twenty-four marks on it"></svg>
+
+    <div class="head" id="head-1">year one &nbsp;01&ndash;12</div>
+    <div class="head" id="head-2">year two &nbsp;13&ndash;24</div>
+
+    <div class="col" id="col-1"><div class="col-inner"></div></div>
+    <div class="col" id="col-2"><div class="col-inner"></div></div>
+
+    <div id="names"></div>
+    <div id="imprint">twenty-four months, two voices<br>one sheet, filled in by hand</div>
+
+  </div>
+</div>
+
+<div id="ui">
+  <span>space or click</span><span id="ui-count"><b>01</b> / 24</span><span id="ui-turn"></span>
+</div>
+
+<script>
+/* ---------- the data contract ---------- */
+
+var PEOPLE = { a: "me", b: "you" };
+
+var ENTRIES = [
+  { n:  1, prompt: "a small physical detail — something in how they move",   a: "", b: "" },
+  { n:  2, prompt: "a sound they make",                                            a: "", b: "" },
+  { n:  3, prompt: "something they say constantly and don't notice",               a: "", b: "" },
+  { n:  4, prompt: "a thing they're good at that they'd never list",               a: "", b: "" },
+  { n:  5, prompt: "how they enter a room",                                        a: "", b: "" },
+  { n:  6, prompt: "something they taught you without meaning to",                 a: "", b: "" },
+  { n:  7, prompt: "a thing they find funny that nobody else does",                a: "", b: "" },
+  { n:  8, prompt: "how they are when they're tired",                              a: "", b: "" },
+  { n:  9, prompt: "something they have never once given up on",                   a: "", b: "" },
+  { n: 10, prompt: "a time they were right and you were wrong",                    a: "", b: "" },
+  { n: 11, prompt: "what they do when someone else is sad",                        a: "", b: "" },
+  { n: 12, prompt: "a thing that annoyed you at first and doesn't now",            a: "", b: "" },
+  { n: 13, prompt: "something they made",                                          a: "", b: "" },
+  { n: 14, prompt: "a place that belongs to them",                                 a: "", b: "" },
+  { n: 15, prompt: "how they handle being wrong",                                  a: "", b: "" },
+  { n: 16, prompt: "a thing they protect",                                         a: "", b: "" },
+  { n: 17, prompt: "something they carry that they never asked for",               a: "", b: "" },
+  { n: 18, prompt: "how they've changed in two years",                             a: "", b: "" },
+  { n: 19, prompt: "what hasn't changed at all",                                   a: "", b: "" },
+  { n: 20, prompt: "a thing you'd defend about them to a stranger",                a: "", b: "" },
+  { n: 21, prompt: "something you'd only ever say to their face",                  a: "", b: "" },
+  { n: 22, prompt: "what you would miss first",                                    a: "", b: "" },
+  { n: 23, prompt: "what they are to you now that they weren't at month one",      a: "", b: "" },
+  { n: 24, prompt: "the whole thing. why them.",                                   a: "", b: "" }
+];
+
+(function(){
+  "use strict";
+
+  var NS = "http://www.w3.org/2000/svg";
+  var FW = 482, FH = 258, PAD = 20;      /* the field, in its own units */
+  var N  = ENTRIES.length;
+
+  /* ================================================================
+     1. the line
+     Generated, not authored. A momentum walk lays down control
+     points; the walk is scored for the things this poster needs
+     (it must cross itself, it must cover the field, it must not
+     graze itself anywhere else, it must arrive on the right) and
+     the best seed of a few thousand wins. Then Catmull-Rom, then a
+     slow perpendicular wobble so it reads as a hand and not a
+     plotter.
+     ================================================================ */
+
+  function rng(seed){
+    var s = seed >>> 0;
+    return function(){ s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  }
+
+  function spine(seed){
+    var r = rng(seed), M = 15;
+    var step = 62;
+    var p = [{ x: PAD + r() * 34, y: PAD + r() * (FH - 2 * PAD) }];
+    var ang = (r() - 0.5) * 1.1;
+    for (var i = 1; i < M; i++){
+      ang += (r() - 0.5) * 2.35;
+      var px = p[i-1].x + Math.cos(ang) * step;
+      var py = p[i-1].y + Math.sin(ang) * step;
+      if (px < PAD || px > FW - PAD || py < PAD || py > FH - PAD){
+        ang = Math.atan2(FH/2 - p[i-1].y, FW/2 - p[i-1].x) + (r() - 0.5) * 0.8;
+        px = p[i-1].x + Math.cos(ang) * step;
+        py = p[i-1].y + Math.sin(ang) * step;
+      }
+      p.push({
+        x: Math.max(PAD, Math.min(FW - PAD, px)),
+        y: Math.max(PAD, Math.min(FH - PAD, py))
+      });
+    }
+    return p;
+  }
+
+  function segInt(a,b,c,d){
+    var d1 = (b.x-a.x)*(d.y-c.y) - (b.y-a.y)*(d.x-c.x);
+    if (Math.abs(d1) < 1e-9) return false;
+    var t = ((c.x-a.x)*(d.y-c.y) - (c.y-a.y)*(d.x-c.x)) / d1;
+    var u = ((c.x-a.x)*(b.y-a.y) - (c.y-a.y)*(b.x-a.x)) / d1;
+    return t > 0.01 && t < 0.99 && u > 0.01 && u < 0.99;
+  }
+
+  function ptSeg(p,a,b){
+    var vx=b.x-a.x, vy=b.y-a.y, L=vx*vx+vy*vy || 1;
+    var t = Math.max(0, Math.min(1, ((p.x-a.x)*vx + (p.y-a.y)*vy) / L));
+    var dx = a.x + vx*t - p.x, dy = a.y + vy*t - p.y;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  function score(p){
+    var i, j, s0 = p[0], e0 = p[p.length-1];
+
+    /* cheap rejects first: it must set out from the left, arrive on the
+       right, use the whole field, and stay clear of the title block */
+    var minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9,len=0;
+    for (i = 0; i < p.length; i++){
+      if (p[i].x<minx) minx=p[i].x; if (p[i].x>maxx) maxx=p[i].x;
+      if (p[i].y<miny) miny=p[i].y; if (p[i].y>maxy) maxy=p[i].y;
+      if (i) len += Math.hypot(p[i].x-p[i-1].x, p[i].y-p[i-1].y);
+      if (p[i].y < 30 && p[i].x > 296) return -1;
+    }
+    var spanX = (maxx-minx)/(FW-2*PAD), spanY = (maxy-miny)/(FH-2*PAD);
+    if (spanX < 0.86 || spanY < 0.76) return -1;
+    if (s0.x > FW * 0.24) return -1;
+    if (e0.x < FW * 0.68) return -1;
+
+    /* then the expensive part: how it behaves against itself */
+    var cross = 0, nearest = 1e9, endClear = 1e9;
+    for (i = 0; i < p.length - 1; i++){
+      if (i < p.length - 3){
+        var de = ptSeg(e0, p[i], p[i+1]);
+        if (de < endClear) endClear = de;
+      }
+      for (j = i + 2; j < p.length - 1; j++){
+        if (segInt(p[i], p[i+1], p[j], p[j+1])){ cross++; continue; }
+        for (var t = 0; t <= 4; t++){
+          var q = { x: p[i].x + (p[i+1].x - p[i].x) * (t/4),
+                    y: p[i].y + (p[i+1].y - p[i].y) * (t/4) };
+          var dd = ptSeg(q, p[j], p[j+1]);
+          if (dd < nearest) nearest = dd;
+        }
+      }
+    }
+    if (cross < 1 || cross > 2) return -1;
+    if (nearest < 14) return -1;
+    if (endClear < 17) return -1;          /* the square must land in clear air */
+
+    return spanX*46 + spanY*46 + Math.min(nearest,32)*1.5
+         + (cross === 1 ? 12 : 0) + Math.min(endClear,44)*0.55 + len*0.012;
+  }
+
+  var best = null, bestScore = -1;
+  for (var seed = 1; seed <= 30000 && bestScore < 172; seed++){
+    var cand = spine(seed);
+    var sc = score(cand);
+    if (sc > bestScore){ bestScore = sc; best = cand; }
+  }
+  if (!best) best = spine(1);
+
+  function catmull(c, per){
+    var out = [], i, j;
+    for (i = 0; i < c.length - 1; i++){
+      var p0 = c[i-1] || c[i], p1 = c[i], p2 = c[i+1], p3 = c[i+2] || c[i+1];
+      for (j = 0; j < per; j++){
+        var t = j / per, t2 = t*t, t3 = t2*t;
+        out.push({
+          x: 0.5*((2*p1.x) + (-p0.x+p2.x)*t + (2*p0.x-5*p1.x+4*p2.x-p3.x)*t2 + (-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+          y: 0.5*((2*p1.y) + (-p0.y+p2.y)*t + (2*p0.y-5*p1.y+4*p2.y-p3.y)*t2 + (-p0.y+3*p1.y-3*p2.y+p3.y)*t3)
+        });
+      }
+    }
+    out.push(c[c.length-1]);
+    return out;
+  }
+
+  var raw = catmull(best, 26);
+
+  /* the hand: a slow wobble, perpendicular, tiny */
+  var hr = rng(9137), ph1 = hr()*6.283, ph2 = hr()*6.283, ph3 = hr()*6.283;
+  var pts = raw.map(function(p, i){
+    var u = i / (raw.length - 1);
+    var a = raw[Math.max(0, i-1)], b = raw[Math.min(raw.length-1, i+1)];
+    var dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1;
+    var off = 1.05 * (0.62*Math.sin(u*21.4 + ph1) + 0.38*Math.sin(u*44.9 + ph2) + 0.26*Math.sin(u*9.7 + ph3));
+    return { x: p.x + (-dy/L) * off, y: p.y + (dx/L) * off };
+  });
+
+  var cum = [0], k;
+  for (k = 1; k < pts.length; k++){
+    cum.push(cum[k-1] + Math.hypot(pts[k].x - pts[k-1].x, pts[k].y - pts[k-1].y));
+  }
+  var TOTAL = cum[cum.length - 1];
+
+  function atLength(L){
+    var lo = 0, hi = cum.length - 1;
+    while (lo < hi - 1){ var mid = (lo + hi) >> 1; if (cum[mid] < L) lo = mid; else hi = mid; }
+    return lo;
+  }
+
+  /* twenty-four waypoints, evenly paced but not mechanically so */
+  var wr = rng(4242), marks = [];
+  for (var m = 0; m < N; m++){
+    var f = 0.018 + m * (0.945 / (N - 1)) + (wr() - 0.5) * 0.011;
+    f = Math.max(0.006, Math.min(0.972, f));
+    var L = f * TOTAL;
+    var idx = atLength(L);
+    var a0 = pts[Math.max(0, idx-2)], b0 = pts[Math.min(pts.length-1, idx+2)];
+    var dx = b0.x - a0.x, dy = b0.y - a0.y, len = Math.hypot(dx, dy) || 1;
+    marks.push({ len: L, x: pts[idx].x, y: pts[idx].y, nx: -dy/len, ny: dx/len });
+  }
+
+  /* ---------- paint the field ---------- */
+
+  var svg = document.getElementById("field");
+
+  var d = "M " + pts[0].x.toFixed(2) + " " + pts[0].y.toFixed(2);
+  for (k = 1; k < pts.length; k++) d += " L " + pts[k].x.toFixed(2) + " " + pts[k].y.toFixed(2);
+
+  var path = document.createElementNS(NS, "path");
+  path.setAttribute("id", "line");
+  path.setAttribute("d", d);
+  path.setAttribute("stroke-dasharray", TOTAL.toFixed(2));
+  path.setAttribute("stroke-dashoffset", TOTAL.toFixed(2));
+  svg.appendChild(path);
+
+  var tickEls = marks.map(function(mk, i){
+    var t = document.createElementNS(NS, "line");
+    var half = (i === N - 1) ? 3.4 : 2.5;
+    t.setAttribute("class", "tick");
+    t.setAttribute("x1", (mk.x - mk.nx*half).toFixed(2));
+    t.setAttribute("y1", (mk.y - mk.ny*half).toFixed(2));
+    t.setAttribute("x2", (mk.x + mk.nx*half).toFixed(2));
+    t.setAttribute("y2", (mk.y + mk.ny*half).toFixed(2));
+    svg.appendChild(t);
+    return t;
+  });
+
+  var end = pts[pts.length - 1];
+  var sq = document.createElementNS(NS, "rect");
+  sq.setAttribute("id", "terminus");
+  sq.setAttribute("x", (end.x - 2.1).toFixed(2));
+  sq.setAttribute("y", (end.y - 2.1).toFixed(2));
+  sq.setAttribute("width", "4.2");
+  sq.setAttribute("height", "4.2");
+  svg.appendChild(sq);
+
+  /* ================================================================
+     2. the credits
+     All twenty-four are typeset from the start and simply have no
+     ink in them yet, so the sheet never reflows: lines arrive in
+     the place they were always going to sit.
+     ================================================================ */
+
+  function pad2(n){ return (n < 10 ? "0" : "") + n; }
+
+  var creditEls = [];
+
+  function buildCredit(e){
+    var wrap = document.createElement("div");
+    wrap.className = "credit";
+
+    var p = document.createElement("div");
+    p.className = "c-prompt";
+    var num = document.createElement("span");
+    num.className = "c-num";
+    num.textContent = pad2(e.n);
+    p.appendChild(num);
+    p.appendChild(document.createTextNode(e.prompt));
+
+    var vs = document.createElement("div");
+    vs.className = "c-voices";
+
+    function voice(who, said){
+      var v = document.createElement("span");
+      v.className = "c-v";
+      var w = document.createElement("span");
+      w.className = "c-who";
+      w.textContent = who;
+      v.appendChild(w);
+      if (said){
+        var s = document.createElement("span");
+        s.className = "c-said";
+        s.textContent = said;
+        v.appendChild(s);
+      } else {
+        var r = document.createElement("span");
+        r.className = "c-rule";
+        v.appendChild(r);
+      }
+      return v;
+    }
+
+    var va = voice(PEOPLE.a, e.a), vb = voice(PEOPLE.b, e.b);
+    vs.appendChild(va); vs.appendChild(vb);
+
+    wrap.appendChild(p);
+    wrap.appendChild(vs);
+    creditEls.push({ wrap: wrap, prompt: p, a: va, b: vb });
+    return wrap;
+  }
+
+  var inner1 = document.querySelector("#col-1 .col-inner");
+  var inner2 = document.querySelector("#col-2 .col-inner");
+  ENTRIES.forEach(function(e, i){ (i < 12 ? inner1 : inner2).appendChild(buildCredit(e)); });
+
+  document.getElementById("names").innerHTML =
+    esc(PEOPLE.a) + "<br>" + esc(PEOPLE.b);
+
+  function esc(s){
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  /* fit the credit type so the block always lands inside its column,
+     whatever ends up written in it */
+  function fitCredits(){
+    var box = document.getElementById("col-1").getBoundingClientRect().height;
+    if (!box) return;
+    var lo = 4.2, hi = 8.6, fs = lo;
+    for (var i = 0; i < 14; i++){
+      var mid = (lo + hi) / 2;
+      document.documentElement.style.setProperty("--cfs", mid);
+      var h = Math.max(inner1.getBoundingClientRect().height,
+                       inner2.getBoundingClientRect().height);
+      if (h <= box){ fs = mid; lo = mid; } else { hi = mid; }
+    }
+    document.documentElement.style.setProperty("--cfs", fs.toFixed(3));
+  }
+
+  /* ================================================================
+     3. the mechanic
+     p counts presses, 0..48. Two voices to a month; the line only
+     moves once both have spoken.
+     ================================================================ */
+
+  var P_MAX = N * 2;
+  var p = 0;
+
+  var head1 = document.getElementById("head-1");
+  var head2 = document.getElementById("head-2");
+  var uiCount = document.getElementById("ui-count");
+  var uiTurn  = document.getElementById("ui-turn");
+
+  function render(){
+    var done = (p >= P_MAX);
+    var stop = done ? N : Math.floor(p / 2) + 1;     /* 1..24 */
+
+    creditEls.forEach(function(c, i){
+      var n = i + 1;
+      c.prompt.classList.toggle("is-on", p >= (n - 1) * 2);
+      c.a.classList.toggle("is-on", p >= n * 2 - 1);
+      c.b.classList.toggle("is-on", p >= n * 2);
+      c.wrap.classList.toggle("is-now", !done && n === stop);
+    });
+
+    head1.classList.toggle("is-on", true);
+    head2.classList.toggle("is-on", p >= 24);
+
+    tickEls.forEach(function(t, i){
+      t.classList.toggle("is-on", i + 1 <= stop);
+      t.classList.toggle("is-now", !done && i + 1 === stop);
+    });
+
+    var reveal = done ? TOTAL : marks[stop - 1].len;
+    path.setAttribute("stroke-dashoffset", (TOTAL - reveal).toFixed(2));
+    sq.classList.toggle("is-on", done);
+
+    uiCount.innerHTML = "<b>" + pad2(stop) + "</b> / 24";
+    uiTurn.textContent = done ? "the sheet is set"
+                              : (p % 2 === 0 ? PEOPLE.a + " speaks" : PEOPLE.b + " speaks");
+  }
+
+  function step(n){
+    p = Math.max(0, Math.min(P_MAX, p + n));
+    render();
+  }
+
+  document.addEventListener("click", function(){ step(1); });
+  document.addEventListener("keydown", function(ev){
+    var kx = ev.key;
+    if (kx === " " || kx === "Spacebar" || kx === "Enter" || kx === "ArrowRight"){
+      ev.preventDefault(); step(1);
+    } else if (kx === "ArrowLeft" || kx === "Backspace"){
+      ev.preventDefault(); step(-1);
+    } else if (kx === "Home"){
+      ev.preventDefault(); p = 0; render();
+    } else if (kx === "End"){
+      ev.preventDefault(); p = P_MAX; render();
+    }
+  });
+
+  /* ---------- scale ---------- */
+
+  function layout(){
+    if (window.innerWidth > 640){
+      var kk = Math.min((window.innerHeight - 44 - 46) / 800, (window.innerWidth - 260) / 566, 1.42);
+      document.documentElement.style.setProperty("--k", Math.max(0.55, kk).toFixed(4));
+    } else {
+      document.documentElement.style.setProperty("--k", "1");
+    }
+    fitCredits();
+  }
+
+  window.addEventListener("resize", layout);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+  layout();
+  render();
+})();
+</script>
+</body>
+</html>

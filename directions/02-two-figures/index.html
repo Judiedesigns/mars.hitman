@@ -1,0 +1,783 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>twenty-four — two figures on the path</title>
+<style>
+/* ------------------------------------------------------------------
+   twenty-four / direction 02 — two figures on the path
+
+   A landscape you are small inside. One path recedes to a horizon.
+   Two people stand on it, a couple of pixels tall, and walk toward
+   the foreground across twenty-four months. The world is not there
+   at the start: it accrues behind them. Two years of walking made
+   the place.
+
+   Paper, pencil, one speck of red at the very beginning of the path
+   — the only colour, and you only ever see it looking back.
+------------------------------------------------------------------ */
+
+:root{
+  --paper:  #fcfbf9;   /* year one: cold morning paper   */
+  --paper2: #faf7f1;   /* year two: the light lowering   */
+  --ink:    #14130f;
+  --red:    #c8340a;
+
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino,
+           "Times New Roman", Times, serif;
+  --mono:  ui-monospace, SFMono-Regular, Menlo, Consolas,
+           "DejaVu Sans Mono", monospace;
+}
+
+*{ box-sizing:border-box; }
+
+html,body{
+  height:100%; margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--serif);
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+}
+body{ transition:background-color 2600ms ease; }
+body.y2{ background:var(--paper2); }
+
+#land{
+  position:fixed; inset:0;
+  width:100%; height:100%;
+  display:block;
+}
+
+/* every mark in the world fades up when its month arrives */
+.wm{ opacity:0; transition:opacity 1300ms ease; }
+
+/* ---------- the chrome: tiny, letterspaced, out of the way ---------- */
+
+.chrome{
+  position:fixed;
+  font-family:var(--mono);
+  font-size:8.5px;
+  line-height:1.85;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:rgba(20,19,15,0.40);
+  user-select:none;
+  pointer-events:none;
+  white-space:nowrap;
+}
+
+#title{ top:2.1rem; right:2.6rem; text-align:right; }
+#title b{ font-weight:400; color:rgba(20,19,15,0.62); }
+#title span{ display:block; letter-spacing:0.14em; color:rgba(20,19,15,0.26); }
+
+#meta{ left:2.6rem; bottom:2.1rem; }
+#meta b{ font-weight:400; color:rgba(20,19,15,0.66); }
+#meta span{ display:block; color:rgba(20,19,15,0.26); letter-spacing:0.14em; }
+
+#hint{
+  left:50%; bottom:2.0rem; transform:translateX(-50%);
+  color:rgba(20,19,15,0.22);
+  transition:opacity 900ms ease;
+}
+#hint.off{ opacity:0; }
+
+/* ---------- the said things: bottom right, flush right, very small ---------- */
+
+#say{
+  position:fixed;
+  right:2.6rem; bottom:2.1rem;
+  width:min(34ch, 46vw);
+  text-align:right;
+  user-select:none;
+  pointer-events:none;
+  opacity:0;
+  transform:translateY(5px);
+  transition:opacity 800ms ease, transform 800ms ease;
+}
+#say.on{ opacity:1; transform:none; }
+
+#ask{
+  font-family:var(--mono);
+  font-size:8.5px;
+  letter-spacing:0.13em;
+  line-height:1.75;
+  color:rgba(20,19,15,0.34);
+  margin:0 0 1.35rem;
+}
+
+.v{ margin:0 0 1.05rem; transition:opacity 700ms ease; }
+.v:last-child{ margin-bottom:0; }
+.v.wait{ opacity:0.12; }
+
+.who{
+  display:block;
+  font-family:var(--mono);
+  font-size:7.5px;
+  letter-spacing:0.26em;
+  text-transform:uppercase;
+  color:rgba(20,19,15,0.28);
+  margin-bottom:0.34rem;
+}
+.line{
+  margin:0;
+  font-size:12.5px;
+  line-height:1.72;
+  color:rgba(20,19,15,0.86);
+  white-space:pre-wrap;
+}
+.line.none{
+  color:rgba(20,19,15,0.22);
+  font-style:italic;
+}
+
+/* ---------- small screens: the page goes tall, text goes wide ---------- */
+
+@media (max-width:680px){
+  #title{ top:1.2rem; right:1.2rem; }
+  #meta { left:1.2rem; bottom:auto; top:1.2rem; }
+  #say  { left:1.2rem; right:1.2rem; width:auto; bottom:1.4rem; }
+  .line { font-size:12px; }
+  #hint { bottom:0.7rem; }
+}
+@media (max-height:520px){
+  #say{ width:min(30ch,40vw); }
+  .v{ margin-bottom:0.7rem; }
+  #ask{ margin-bottom:0.8rem; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .wm, #say, .v, #hint, body{ transition-duration:1ms !important; }
+}
+</style>
+</head>
+<body>
+
+<svg id="land" aria-hidden="true"></svg>
+
+<div id="title" class="chrome"><b>twenty&#8209;four</b><span>two figures, one path</span></div>
+
+<div id="meta" class="chrome"><b id="mCount">&mdash; / 24</b><span id="mNames">me &amp; you</span></div>
+
+<div id="say" aria-live="polite">
+  <p id="ask"></p>
+  <div class="v" id="vA"><span class="who" id="wA">me</span><p class="line" id="lA"></p></div>
+  <div class="v" id="vB"><span class="who" id="wB">you</span><p class="line" id="lB"></p></div>
+</div>
+
+<div id="hint" class="chrome">space, or click</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================ data */
+
+var PEOPLE = { a: "me", b: "you" };
+
+var ENTRIES = [
+  { n: 1,  prompt:"a small physical detail — something in how they move",   a:"", b:"" },
+  { n: 2,  prompt:"a sound they make",                                       a:"", b:"" },
+  { n: 3,  prompt:"something they say constantly and don't notice",          a:"", b:"" },
+  { n: 4,  prompt:"a thing they're good at that they'd never list",          a:"", b:"" },
+  { n: 5,  prompt:"how they enter a room",                                   a:"", b:"" },
+  { n: 6,  prompt:"something they taught you without meaning to",            a:"", b:"" },
+  { n: 7,  prompt:"a thing they find funny that nobody else does",           a:"", b:"" },
+  { n: 8,  prompt:"how they are when they're tired",                         a:"", b:"" },
+  { n: 9,  prompt:"something they have never once given up on",              a:"", b:"" },
+  { n:10,  prompt:"a time they were right and you were wrong",               a:"", b:"" },
+  { n:11,  prompt:"what they do when someone else is sad",                   a:"", b:"" },
+  { n:12,  prompt:"a thing that annoyed you at first and doesn't now",       a:"", b:"" },
+  { n:13,  prompt:"something they made",                                     a:"", b:"" },
+  { n:14,  prompt:"a place that belongs to them",                            a:"", b:"" },
+  { n:15,  prompt:"how they handle being wrong",                             a:"", b:"" },
+  { n:16,  prompt:"a thing they protect",                                    a:"", b:"" },
+  { n:17,  prompt:"something they carry that they never asked for",          a:"", b:"" },
+  { n:18,  prompt:"how they've changed in two years",                        a:"", b:"" },
+  { n:19,  prompt:"what hasn't changed at all",                              a:"", b:"" },
+  { n:20,  prompt:"a thing you'd defend about them to a stranger",           a:"", b:"" },
+  { n:21,  prompt:"something you'd only ever say to their face",             a:"", b:"" },
+  { n:22,  prompt:"what you would miss first",                               a:"", b:"" },
+  { n:23,  prompt:"what they are to you now that they weren't at month one", a:"", b:"" },
+  { n:24,  prompt:"the whole thing. why them.",                              a:"", b:"" }
+];
+
+var N  = ENTRIES.length;
+var NS = "http://www.w3.org/2000/svg";
+var REDUCED = window.matchMedia &&
+              window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ------------------------------------------------ deterministic noise
+   The same landscape every time the page opens. It is a place, not a
+   new place each visit. */
+function seeded(s){
+  return function(){ s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
+}
+
+/* ============================================================ state */
+
+var cur  = -1;   /* which of the 24 they are standing at, -1 = not begun */
+var beat = 0;    /* 0 = the first voice has spoken, 1 = both have        */
+var W = 1000, H = 700, PX = 1, world = null;
+
+/* ============================================================ world */
+
+function build(){
+  var svg = document.getElementById("land");
+  while(svg.firstChild) svg.removeChild(svg.firstChild);
+
+  var vw = Math.max(280, window.innerWidth);
+  var vh = Math.max(320, window.innerHeight);
+  W  = 1000;
+  H  = Math.round(1000 * vh / vw);
+  PX = 1000 / vw;                 /* design units per CSS pixel */
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+  var rand = seeded(70424);
+  var k    = PX;                  /* stroke weights, held at a constant
+                                     hairline whatever the screen is */
+
+  var yH  = H * 0.30;             /* the horizon */
+  var yB  = H * 0.94;             /* the near end of the walk */
+  var vx  = W * 0.585;            /* where the path leaves the world */
+  var nx  = W * 0.335;            /* where it arrives at your feet */
+
+  /* --- depth -------------------------------------------------------
+     u runs 0 (far, month one) to 1 (near, month twenty-four), linear
+     in screen height. Everything else — scale, path width, how loose
+     the pencil gets — is a function of u. */
+
+  function sn(u){ u = u < 0 ? 0 : (u > 1 ? 1 : u); return Math.pow(u, 1.45); }
+  function scl(u){ return u <= 1 ? 0.20 + 0.80*sn(u) : 1 + (u-1)*0.7; }
+  function py(u){ return yH + (yB - yH) * u; }
+  function px_(u){
+    var uu = u < 1 ? u : 1;
+    var base = vx + (nx - vx) * Math.pow(uu, 1.25);
+    var amp  = W * 0.15 * Math.pow(scl(u), 1.2);
+    var m = Math.sin(u*4.4 + 0.8)*0.60 + Math.sin(u*9.1 + 2.2)*0.24 + Math.sin(u*1.9 + 0.35)*0.55;
+    var x = base + amp * m * 0.62;
+    return Math.max(W*0.10, Math.min(W*0.90, x));
+  }
+  function halfW(u){ return 0.5 + 24 * Math.pow(sn(u), 1.15); }
+
+  /* month m (0-based) sits at u = (m/23)^1.08 — very slightly
+     back-loaded, so year one is mostly far away and small */
+  var U = [];
+  for (var m0 = 0; m0 < N; m0++) U.push(Math.pow(m0/(N-1), 1.08));
+  function monthAt(u){
+    var q = Math.pow(Math.max(0, Math.min(1, u)), 1/1.08) * (N-1);
+    return Math.round(q);
+  }
+
+  /* --- sampled centreline, tangents, edges -------------------------- */
+  var SAMPLES = 460, UMAX = 1.075;
+  var P = [];
+  for (var i = 0; i < SAMPLES; i++){
+    var u = UMAX * i / (SAMPLES - 1);
+    P.push({ u:u, x:px_(u), y:py(u), s:scl(u), w:halfW(u) });
+  }
+  for (var i2 = 0; i2 < SAMPLES; i2++){
+    var a = P[Math.max(0,i2-1)], b = P[Math.min(SAMPLES-1,i2+1)];
+    var dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx,dy) || 1;
+    P[i2].nx = -dy/L; P[i2].ny = dx/L;
+  }
+
+  /* --- svg helpers -------------------------------------------------- */
+  var layerFar  = mk("g"), layerMid = mk("g"), layerNear = mk("g"), layerFig = mk("g");
+  svg.appendChild(layerFar); svg.appendChild(layerMid);
+  svg.appendChild(layerNear); svg.appendChild(layerFig);
+
+  var marks = [];   /* every accruing mark: {el, birth, o} */
+
+  function mk(t){ return document.createElementNS(NS, t); }
+  function put(layer, el, birth, o){
+    el.setAttribute("class","wm");
+    el.style.transitionDelay = Math.round(rand()*620) + "ms";
+    layer.appendChild(el);
+    marks.push({ el:el, birth:birth, o:o });
+    return el;
+  }
+  function stroke(d, w, o){
+    var p = mk("path");
+    p.setAttribute("d", d);
+    p.setAttribute("fill","none");
+    p.setAttribute("stroke","#14130f");
+    p.setAttribute("stroke-width", w.toFixed(2));
+    p.setAttribute("stroke-linecap","round");
+    p.setAttribute("stroke-linejoin","round");
+    p.setAttribute("opacity", o.toFixed(3));
+    return p;
+  }
+  function dot(x,y,r,o){
+    var c = mk("circle");
+    c.setAttribute("cx", x.toFixed(2)); c.setAttribute("cy", y.toFixed(2));
+    c.setAttribute("r", Math.max(0.22, r).toFixed(2));
+    c.setAttribute("fill","#14130f");
+    c.setAttribute("opacity", o.toFixed(3));
+    return c;
+  }
+  /* a run of points drawn the way a hand draws: never quite the line */
+  function pencil(pts, wob){
+    var d = "", ph = rand()*6.283, f1 = 1.6 + rand()*2.4;
+    for (var q = 0; q < pts.length; q++){
+      var t = q/(pts.length-1 || 1);
+      var off = (Math.sin(t*f1*3.2 + ph)*0.75 + (rand()-0.5)*0.22) * wob;
+      var X = pts[q].x + (pts[q].nx||0)*off, Y = pts[q].y + (pts[q].ny||0)*off;
+      d += (q ? " L " : "M ") + X.toFixed(2) + " " + Y.toFixed(2);
+    }
+    return d;
+  }
+
+  /* --- the path: two broken edges, only where they have walked ------ */
+  function edge(side){
+    var i = 0;
+    while (i < SAMPLES - 2){
+      var run = 5 + Math.floor(rand()*12);
+      var seg = [];
+      for (var j = i; j < Math.min(i+run, SAMPLES); j++){
+        var p = P[j];
+        seg.push({ x: p.x + p.nx*p.w*side, y: p.y + p.ny*p.w*side, nx:p.nx, ny:p.ny });
+      }
+      if (seg.length > 1){
+        var mid = P[Math.min(SAMPLES-1, i + (run>>1))];
+        var wob = (0.25 + 1.5*mid.s) * k;
+        var wt  = (0.55 + 0.85*mid.s) * k * (0.72 + rand()*0.62);
+        var op  = 0.30 + 0.48*rand() + 0.14*mid.s;
+        put(layerMid, stroke(pencil(seg, wob), wt, Math.min(0.92, op)),
+            monthAt(mid.u), Math.min(0.92, op));
+      }
+      i += run + (rand() < 0.6 ? 1 + Math.floor(rand()*2) : 0);
+    }
+  }
+  edge(-1); edge(1);
+
+  /* ruts inside the path, foreground only, arriving a month late */
+  for (var r0 = 0; r0 < 15; r0++){
+    var st = 0.34 + rand()*0.64, run2 = 0.04 + rand()*0.10, lane = (rand()*0.9 - 0.45);
+    var seg2 = [];
+    for (var t2 = 0; t2 <= 1.0001; t2 += 0.12){
+      var uu = Math.min(1.05, st + run2*t2);
+      var idx = Math.round(uu/UMAX*(SAMPLES-1)); idx = Math.max(0,Math.min(SAMPLES-1,idx));
+      var pp = P[idx];
+      seg2.push({ x: pp.x + pp.nx*pp.w*lane, y: pp.y + pp.ny*pp.w*lane, nx:pp.nx, ny:pp.ny });
+    }
+    put(layerMid, stroke(pencil(seg2, 0.9*k), 0.5*k*(0.7+rand()*0.7), 0.14 + rand()*0.2),
+        Math.min(N-1, monthAt(st) + 1), 0.14 + rand()*0.2);
+  }
+
+  /* --- the horizon, opening outward from where they started ---------
+     A hairline that is mostly gaps. It reaches the edges of the page
+     around month thirteen. */
+  var hx = -W*0.03;
+  while (hx < W*1.03){
+    var seg3 = W*(0.012 + rand()*0.05);
+    var y0 = yH + (rand()-0.5)*0.7*k, y1 = yH + (rand()-0.5)*0.7*k;
+    var far = Math.abs(hx + seg3/2 - vx) / (W*0.62);
+    var op3 = 0.10 + rand()*0.13;
+    put(layerFar,
+      stroke("M "+hx.toFixed(1)+" "+y0.toFixed(2)+" L "+(hx+seg3).toFixed(1)+" "+y1.toFixed(2),
+             0.55*k, op3),
+      Math.min(N-1, Math.round(far*12 + rand()*1.6)), op3);
+    hx += seg3 + W*(0.004 + rand()*0.035);
+  }
+
+  /* --- the far ridge: short broken strokes, gathering months 3–17 ----
+     Not a band across the page: two or three massifs with open plain
+     between them, so the horizon still reads as mostly nothing. */
+  function ridgeProfile(x, ph){
+    var t = x / W;
+    return 0.5 + 0.5*(Math.sin(t*5.1+ph)*0.55 + Math.sin(t*11.7+ph*1.7)*0.25
+                    + Math.sin(t*2.3+ph*0.4)*0.5)/1.3;
+  }
+  function ridgeMass(x, ph){        /* 0 = open plain, 1 = full massif */
+    var t = x / W;
+    var v = Math.sin(t*3.35 + ph)*0.62 + Math.sin(t*1.45 + ph*2.1)*0.5;
+    return Math.max(0, Math.min(1, (v + 0.30) * 1.5));
+  }
+  function ridgeRow(amp, opBase, tries, bFrom, bTo, ph, len){
+    for (var q2 = 0; q2 < tries; q2++){
+      var x0 = W*(-0.02 + 1.04*rand());
+      var mass = ridgeMass(x0, ph);
+      if (rand() > mass) continue;                 /* leave the plain empty */
+      var pr = ridgeProfile(x0, ph);
+      var slope = (ridgeProfile(x0 + W*0.01, ph) - pr) * amp / (W*0.01);
+      var yy = yH - 1.2*k - pr*amp*mass;
+      var L2 = W*len*(0.35 + rand()*1.1);
+      var d2 = "M "+x0.toFixed(1)+" "+yy.toFixed(2)+
+               " L "+(x0+L2).toFixed(1)+" "+(yy - L2*slope*(0.5+rand()*0.9)).toFixed(2);
+      var o2 = opBase + rand()*opBase*1.1;
+      put(layerFar, stroke(d2, 0.6*k*(0.65+rand()*0.8), o2),
+          bFrom + Math.floor(rand()*(bTo-bFrom+1)), o2);
+    }
+  }
+  ridgeRow(H*0.055, 0.22, 300, 3, 17, 0.7, 0.011);   /* the ridge       */
+  ridgeRow(H*0.028, 0.10, 190, 13, 22, 2.9, 0.009);  /* year two: one further back */
+
+  /* --- scree: dots gathering beside the path where they passed ------ */
+  for (var s0 = 0; s0 < 470; s0++){
+    var us = Math.pow(rand(), 0.72) * 1.02;
+    var idx2 = Math.round(Math.min(1.0, us)/UMAX*(SAMPLES-1));
+    var pS = P[Math.max(0,Math.min(SAMPLES-1, idx2))];
+    var sd = rand() < 0.5 ? -1 : 1;
+    var off2 = pS.w + (2 + 70*pS.s) * Math.pow(rand(), 1.5);
+    var jx = (rand()-0.5)*4*pS.s, jy = (rand()-0.5)*3*pS.s;
+    var X2 = pS.x + pS.nx*off2*sd + jx, Y2 = pS.y + pS.ny*off2*sd + jy;
+    if (X2 < -W*0.02 || X2 > W*1.02 || Y2 < yH + 0.5) continue;
+    var rr = (0.30 + 1.35*pS.s) * (0.45 + rand()*0.9) * k;
+    var oS = 0.22 + rand()*0.42;
+    put(layerMid, dot(X2, Y2, rr, oS),
+        Math.min(N-1, monthAt(pS.u) + Math.floor(rand()*4)), oS);
+  }
+
+  /* --- the crossing: a stream between year one and year two --------- */
+  var uR = (U[11] + U[12]) / 2;
+  var yR = py(uR), sR = scl(uR), gap = (1.6 + 9*sR);
+  var pathXatR = px_(uR), halfR = halfW(uR)*1.7;
+  for (var bank = 0; bank < 2; bank++){
+    var runPts = [], open = true;
+    var flush = function(){
+      if (runPts.length > 1)
+        put(layerMid, stroke(pencil(runPts, 0.7*k), 0.62*k, 0.30), 11, 0.30);
+      runPts = [];
+    };
+    for (var xr = -W*0.04; xr < W*1.04; xr += W*0.012){
+      var sag = Math.sin(xr/W*5.3 + 1.05)*H*0.011 + Math.sin(xr/W*13.0)*H*0.0035;
+      var yr = yR + sag + (bank ? gap : 0);
+      if (Math.abs(xr - pathXatR) < halfR){ flush(); continue; }
+      runPts.push({ x:xr, y:yr, nx:0, ny:1 });
+    }
+    flush();
+  }
+  /* stepping stones where the path fords it */
+  for (var ss = 0; ss < 4; ss++){
+    put(layerMid,
+      dot(pathXatR - halfR*0.7 + halfR*0.46*ss + (rand()-0.5)*2,
+          yR + gap*0.5 + (rand()-0.5)*gap*0.8, (0.5 + 1.1*sR)*k, 0.5),
+      12, 0.5);
+  }
+
+  /* --- tufts and stones in the near field, year two ----------------- */
+  for (var tf = 0; tf < 54; tf++){
+    var ut = 0.42 + rand()*0.62;
+    var it = Math.round(Math.min(1.04,ut)/UMAX*(SAMPLES-1));
+    var pT = P[Math.max(0,Math.min(SAMPLES-1,it))];
+    var sdT = rand() < 0.5 ? -1 : 1;
+    var offT = pT.w + (4 + 90*pT.s)*Math.pow(rand(), 1.3);
+    var bx = pT.x + pT.nx*offT*sdT, by = pT.y + pT.ny*offT*sdT;
+    if (bx < 0 || bx > W || by < yH) continue;
+    var hT = (2 + 9*pT.s) * (0.6 + rand()*0.8);
+    var dT = "";
+    for (var bl = 0; bl < 3; bl++){
+      var fan = (bl-1)*0.55 + (rand()-0.5)*0.3;
+      dT += " M "+bx.toFixed(1)+" "+by.toFixed(1)+
+            " L "+(bx + fan*hT*0.6).toFixed(1)+" "+(by - hT*(0.7+rand()*0.5)).toFixed(1);
+    }
+    var oT = 0.24 + rand()*0.26;
+    put(layerNear, stroke(dT.trim(), 0.55*k, oT),
+        Math.min(N-1, Math.max(13, monthAt(pT.u) + Math.floor(rand()*3))), oT);
+  }
+
+  /* --- the loop the path curls into at the very end ----------------- */
+  (function(){
+    var pEnd = P[SAMPLES-1];
+    var R = H*0.021, cx2 = pEnd.x - R*1.15, cy2 = pEnd.y + R*0.55;
+    var pts2 = [{x:pEnd.x, y:pEnd.y, nx:0, ny:1}];
+    for (var aq = -0.35; aq < 6.05; aq += 0.16){
+      pts2.push({ x: cx2 + Math.cos(aq)*R*1.08, y: cy2 + Math.sin(aq)*R*0.82, nx:0, ny:1 });
+    }
+    put(layerNear, stroke(pencil(pts2, 0.5*k), 1.0*k, 0.45), N-1, 0.45);
+  })();
+
+  /* --- the one piece of colour: where they set off ------------------ */
+  (function(){
+    var q3 = 2.6*k, X3 = px_(0) - q3/2, Y3 = py(0) - q3 - 1.6*k;
+    var sq = mk("rect");
+    sq.setAttribute("x", X3.toFixed(2)); sq.setAttribute("y", Y3.toFixed(2));
+    sq.setAttribute("width", q3.toFixed(2)); sq.setAttribute("height", q3.toFixed(2));
+    sq.setAttribute("fill","none");
+    sq.setAttribute("stroke","#c8340a");
+    sq.setAttribute("stroke-width",(0.8*k).toFixed(2));
+    put(layerFar, sq, 12, 0.85);   /* only visible once you look back */
+  })();
+
+  /* ============================================== the two of them */
+
+  var FIG = H * 0.028;   /* the taller one, at your feet: ~2.8% of the page */
+
+  var BODY = "M -0.100 0 L -0.116 -0.340 L -0.136 -0.660 L -0.100 -0.722 " +
+             "L -0.044 -0.738 L 0.044 -0.738 L 0.100 -0.722 L 0.136 -0.660 " +
+             "L 0.116 -0.340 L 0.100 0 L 0.032 0 L 0.028 -0.302 L 0 -0.322 " +
+             "L -0.028 -0.302 L -0.032 0 Z";
+
+  var gFig = mk("g"); layerFig.appendChild(gFig);
+
+  function person(hRel){
+    var g = mk("g");
+    var b = mk("path");
+    b.setAttribute("d", BODY); b.setAttribute("fill","#14130f");
+    var hd = mk("circle");
+    hd.setAttribute("cx",0); hd.setAttribute("cy",-0.845); hd.setAttribute("r",0.128);
+    hd.setAttribute("fill","#14130f");
+    var inner = mk("g");
+    inner.setAttribute("transform","scale(1,"+hRel+")");
+    inner.appendChild(b); inner.appendChild(hd);
+    g.appendChild(inner);
+    g.dataset.h = hRel;
+    return g;
+  }
+
+  var shadA = mk("ellipse"), shadB = mk("ellipse"), shadJ = mk("ellipse");
+  [shadA, shadB, shadJ].forEach(function(e){
+    e.setAttribute("fill","#14130f"); e.setAttribute("opacity","0.24"); gFig.appendChild(e);
+  });
+  var figA = person(1.00), figB = person(0.915);
+  var hands = mk("path");
+  hands.setAttribute("fill","none");
+  hands.setAttribute("stroke","#14130f");
+  hands.setAttribute("stroke-linecap","round");
+  hands.setAttribute("vector-effect","non-scaling-stroke");
+  gFig.appendChild(hands);
+  gFig.appendChild(figA); gFig.appendChild(figB);
+
+  var tick = mk("path");
+  tick.setAttribute("fill","none"); tick.setAttribute("stroke","#14130f");
+  tick.setAttribute("stroke-width",(0.6*k).toFixed(2)); tick.setAttribute("opacity","0.30");
+  layerFig.appendChild(tick);
+
+  var label = mk("text");
+  label.setAttribute("font-family","ui-monospace, SFMono-Regular, Menlo, Consolas, monospace");
+  label.setAttribute("font-size",(8.6*k).toFixed(2));
+  label.setAttribute("letter-spacing",(1.1*k).toFixed(2));
+  label.setAttribute("fill","#14130f");
+  label.setAttribute("opacity","0.46");
+  layerFig.appendChild(label);
+
+  world = {
+    svg:svg, marks:marks, U:U, k:k, FIG:FIG, yH:yH,
+    px_:px_, py:py, scl:scl,
+    gFig:gFig, figA:figA, figB:figB, hands:hands,
+    shadA:shadA, shadB:shadB, shadJ:shadJ, tick:tick, label:label
+  };
+}
+
+/* ================================================= placing the two */
+
+function place(pos, speaker){
+  var w = world, U = w.U;
+  var i = Math.max(0, Math.min(N-1, Math.floor(pos)));
+  var j = Math.min(N-1, i+1), f = Math.max(0, Math.min(1, pos - i));
+  var u = U[i] + (U[j] - U[i]) * f;
+
+  var x = w.px_(u), y = w.py(u), h = w.FIG * w.scl(u);
+  /* a small bob so the walk is a walk and not a slide */
+  var bob = (f > 0 && f < 1) ? Math.abs(Math.sin(f*Math.PI*4)) * h * 0.035 : 0;
+
+  var sep = 0.195;
+  w.gFig.setAttribute("transform",
+    "translate(" + x.toFixed(2) + "," + (y - bob).toFixed(2) + ") scale(" + h.toFixed(3) + ")");
+
+  w.figA.setAttribute("transform","translate("+(-sep)+",0)");
+  w.figB.setAttribute("transform","translate("+( sep)+",0)");
+  w.figA.setAttribute("opacity", speaker === 1 ? 0.55 : 1);
+  w.figB.setAttribute("opacity", speaker === 0 ? 0.55 : 1);
+
+  /* holding hands: a hairline held at one pixel however far off they are */
+  var hy = -0.40;
+  w.hands.setAttribute("d",
+    "M "+(-sep+0.12)+" "+(hy-0.14)+" L "+(-0.02)+" "+hy+" L "+(0.02)+" "+hy+" L "+(sep-0.12)+" "+(hy-0.13));
+  w.hands.setAttribute("stroke-width", (0.75).toFixed(2));
+  w.hands.setAttribute("opacity", 0.9);
+
+  /* the light lowers through year two: the shadows lengthen */
+  var mm  = Math.max(0, pos);
+  var ext = 0.55 + Math.pow(mm/(N-1), 1.5) * 1.55;
+  var merged = mm > N - 1.6;      /* at twenty-four the shadows are one */
+
+  w.shadA.setAttribute("opacity", merged ? 0 : 0.24);
+  w.shadB.setAttribute("opacity", merged ? 0 : 0.24);
+  w.shadJ.setAttribute("opacity", merged ? 0.26 : 0);
+  function shad(e, cx, rx){
+    e.setAttribute("cx", cx.toFixed(3)); e.setAttribute("cy", "0.014");
+    e.setAttribute("rx", rx.toFixed(3)); e.setAttribute("ry", (0.048).toFixed(3));
+  }
+  shad(w.shadA, -sep + 0.30*ext, 0.15 + 0.20*ext);
+  shad(w.shadB,  sep + 0.30*ext, 0.14 + 0.19*ext);
+  shad(w.shadJ,        0.30*ext, sep + 0.16 + 0.22*ext);
+
+  /* who is speaking, written beside them the size of a map annotation */
+  if (speaker === null || cur < 0){
+    w.label.setAttribute("opacity", 0);
+    w.tick.setAttribute("opacity", 0);
+  } else {
+    var k = w.k, right = (speaker === 1);
+    var edgeX = x + (right ? 1 : -1) * Math.max(h*0.34, 2.2*k);
+    var t0 = edgeX + (right ? 1 : -1) * 4*k;
+    var t1 = edgeX + (right ? 1 : -1) * 13*k;
+    var ly = y - Math.max(h*0.42, 3*k);
+    w.tick.setAttribute("d",
+      "M "+t0.toFixed(1)+" "+ly.toFixed(1)+" L "+t1.toFixed(1)+" "+ly.toFixed(1));
+    w.tick.setAttribute("opacity", 0.28);
+    w.label.setAttribute("x", (t1 + (right ? 4.5*k : -4.5*k)).toFixed(1));
+    w.label.setAttribute("y", (ly + 3.1*k).toFixed(1));
+    w.label.setAttribute("text-anchor", right ? "start" : "end");
+    w.label.textContent = (right ? PEOPLE.b : PEOPLE.a);
+    w.label.setAttribute("opacity", 0.46);
+  }
+}
+
+/* ==================================================== the accrual */
+
+function reveal(level){
+  var ms = world.marks;
+  for (var i = 0; i < ms.length; i++){
+    ms[i].el.style.opacity = (level >= ms[i].birth) ? ms[i].o : 0;
+  }
+}
+
+/* ======================================================== the text */
+
+var elAsk = document.getElementById("ask");
+var elVA = document.getElementById("vA"), elVB = document.getElementById("vB");
+var elLA = document.getElementById("lA"), elLB = document.getElementById("lB");
+var elSay = document.getElementById("say");
+var elCount = document.getElementById("mCount");
+var elHint = document.getElementById("hint");
+
+document.getElementById("wA").textContent = PEOPLE.a;
+document.getElementById("wB").textContent = PEOPLE.b;
+document.getElementById("mNames").textContent = PEOPLE.a + " & " + PEOPLE.b;
+
+function said(el, txt){
+  if (txt && txt.trim()){ el.textContent = txt; el.className = "line"; }
+  else { el.textContent = "not said yet"; el.className = "line none"; }
+}
+function pad(n){ return (n < 10 ? "0" : "") + n; }
+
+function render(){
+  reveal(cur);
+  document.body.classList.toggle("y2", cur >= 12);
+
+  if (cur < 0){
+    elSay.className = "";
+    elCount.innerHTML = "&mdash; / 24";
+    elHint.className = "chrome";
+    place(0, null);
+    return;
+  }
+  var e = ENTRIES[cur];
+  elAsk.textContent = e.prompt;
+  said(elLA, e.a); said(elLB, e.b);
+  elVA.className = "v";
+  elVB.className = beat === 1 ? "v" : "v wait";
+  elSay.className = "on";
+  elHint.className = "chrome off";
+  elCount.innerHTML = "<b>" + pad(e.n) + "</b> / 24 &nbsp;&middot;&nbsp; year " +
+                      (cur < 12 ? "one" : "two");
+}
+
+/* ==================================================== the walking */
+
+var anim = null;
+function walk(from, to, done){
+  if (anim) { cancelAnimationFrame(anim); anim = null; }
+  if (REDUCED){ place(to, null); if (done) done(); return; }
+  var t0 = performance.now(), D = 1000;
+  (function step(now){
+    var t = Math.min(1, (now - t0) / D);
+    var e = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2;   /* easeInOutCubic */
+    place(from + (to - from) * e, null);
+    if (t < 1) anim = requestAnimationFrame(step);
+    else { anim = null; if (done) done(); }
+  })(t0);
+}
+
+function next(){
+  if (anim) return;
+  if (cur < 0){ cur = 0; beat = 0; render(); place(0, 0); return; }
+  if (beat === 0){ beat = 1; render(); place(cur, 1); return; }
+  if (cur < N - 1){
+    var from = cur;
+    cur += 1; beat = 0;
+    reveal(cur);
+    document.body.classList.toggle("y2", cur >= 12);
+    elSay.className = "";           /* the words step aside while they walk */
+    walk(from, cur, function(){ render(); place(cur, 0); });
+    return;
+  }
+  place(N-1, null);                 /* twenty-four: the labels come off */
+}
+
+function prev(){
+  if (anim) return;
+  if (beat === 1){ beat = 0; render(); place(cur, 0); return; }
+  if (cur > 0){
+    var from = cur; cur -= 1; beat = 1;
+    reveal(cur);
+    document.body.classList.toggle("y2", cur >= 12);
+    elSay.className = "";
+    walk(from, cur, function(){ render(); place(cur, 1); });
+    return;
+  }
+  cur = -1; beat = 0; render();
+}
+
+function jump(i, b){
+  if (anim){ cancelAnimationFrame(anim); anim = null; }
+  cur = Math.max(-1, Math.min(N-1, i));
+  beat = b || 0;
+  render();
+  place(Math.max(0, cur), cur < 0 ? null : beat);
+}
+
+/* ==================================================== moving through */
+
+document.addEventListener("keydown", function(ev){
+  var K = ev.key;
+  if (K === " " || K === "Spacebar" || K === "Enter" || K === "ArrowRight" || K === "ArrowDown"){
+    ev.preventDefault(); next();
+  } else if (K === "ArrowLeft" || K === "ArrowUp"){
+    ev.preventDefault(); prev();
+  } else if (K === "Home"){
+    ev.preventDefault(); jump(-1, 0);
+  } else if (K === "End"){
+    ev.preventDefault(); jump(N-1, 1);
+  }
+});
+
+/* click has to carry the piece on its own — an embedded frame may
+   never be given the keyboard */
+document.addEventListener("click", function(){ next(); });
+
+var wheelAt = 0;
+window.addEventListener("wheel", function(ev){
+  var now = Date.now();
+  if (now - wheelAt < 700 || Math.abs(ev.deltaY) < 6) return;
+  wheelAt = now;
+  if (ev.deltaY > 0) next(); else prev();
+}, { passive:true });
+
+/* ==================================================== life cycle */
+
+function boot(){
+  build();
+  render();
+  place(Math.max(0, cur), cur < 0 ? null : beat);
+}
+boot();
+
+var rz = null;
+window.addEventListener("resize", function(){
+  clearTimeout(rz);
+  rz = setTimeout(function(){
+    if (anim){ cancelAnimationFrame(anim); anim = null; }
+    boot();
+  }, 200);
+});
+
+try { window.focus(); } catch(e){}
+})();
+</script>
+</body>
+</html>
