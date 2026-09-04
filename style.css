@@ -214,3 +214,9 @@ body { cursor: default; }
   pointer-events: none;
 }
 @media (max-width: 720px) { #footer { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  #thread, #ghost, .node, .halo, #panel, #hint, .voice {
+    transition-duration: 1ms !important;
+  }
+}

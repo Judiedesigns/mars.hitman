@@ -1,3 +1,319 @@
+<title>twenty-four</title>
+
+<style>
+/* twenty-four — paper, ink, one orange thread */
+
+:root {
+  --paper:  #f2f0ec;
+  --paper-2:#e9e6e0;
+  --ink:    #171614;
+  --ink-40: rgba(23, 22, 20, 0.40);
+  --ink-25: rgba(23, 22, 20, 0.25);
+  --ink-12: rgba(23, 22, 20, 0.12);
+  --thread: #e8420a;
+
+  --serif: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino,
+           "Times New Roman", Times, serif;
+  --sans:  ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+body { cursor: default; }
+
+/* ---------- the field ---------- */
+
+#field {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.node {
+  fill: var(--ink);
+  transition: r 420ms ease, fill 420ms ease, opacity 420ms ease;
+  cursor: pointer;
+}
+.node.is-unlit  { opacity: 0.82; }
+.node.is-past   { opacity: 1; }
+.node.is-here   { fill: var(--thread); }
+
+.node-hit { fill: transparent; cursor: pointer; }
+
+.halo {
+  fill: none;
+  stroke: var(--thread);
+  stroke-width: 1;
+  opacity: 0;
+  transition: opacity 500ms ease, r 500ms cubic-bezier(.2,.8,.2,1);
+}
+.halo.is-on { opacity: 0.55; }
+
+#thread {
+  fill: none;
+  stroke: var(--thread);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke-dashoffset 900ms cubic-bezier(.35,.02,.2,1);
+}
+
+/* ---------- the counter ---------- */
+
+#counter {
+  position: fixed;
+  top: 2.2rem;
+  left: 2.6rem;
+  font-family: var(--sans);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+  user-select: none;
+}
+#counter b { color: var(--ink); font-weight: 500; }
+
+/* ---------- the text, arriving at the bottom right ---------- */
+
+#panel {
+  position: fixed;
+  right: 3.2rem;
+  bottom: 3.0rem;
+  width: min(42ch, calc(100vw - 6.4rem));
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 700ms ease, transform 700ms ease;
+  pointer-events: none;
+}
+#panel.is-on { opacity: 1; transform: none; }
+
+#prompt {
+  font-family: var(--sans);
+  font-size: 10.5px;
+  line-height: 1.5;
+  letter-spacing: 0.11em;
+  text-transform: lowercase;
+  color: var(--ink-40);
+  margin: 0 0 1.5rem;
+}
+
+.voice { margin: 0 0 1.4rem; }
+.voice:last-child { margin-bottom: 0; }
+
+.voice-name {
+  display: block;
+  font-family: var(--sans);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-25);
+  margin-bottom: 0.42rem;
+}
+
+.voice-line {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.62;
+  white-space: pre-wrap;
+}
+.voice-line.is-empty {
+  color: var(--ink-25);
+  font-style: italic;
+}
+
+#sig {
+  margin-top: 2.2rem;
+  font-family: var(--sans);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--ink-25);
+  line-height: 1.7;
+}
+
+/* ---------- the opening frame ---------- */
+
+#hint {
+  position: fixed;
+  left: 50%;
+  bottom: 2.4rem;
+  transform: translateX(-50%);
+  font-family: var(--sans);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-25);
+  transition: opacity 600ms ease;
+  user-select: none;
+}
+#hint.is-off { opacity: 0; }
+
+@media (max-width: 720px) {
+  #panel   { right: 1.4rem; left: 1.4rem; bottom: 1.8rem; width: auto; }
+  #counter { top: 1.4rem; left: 1.4rem; }
+  .voice-line { font-size: 14px; }
+}
+
+/* ---------- the walk ---------- */
+
+#ghost {
+  fill: none;
+  stroke: var(--thread);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+#ghost.is-on { opacity: 0.22; }
+
+.walker {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  fill: var(--ink-40);
+  pointer-events: none;
+}
+
+/* ---------- landmarks: waypoints at odd angles ---------- */
+
+.landmark {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.07em;
+  fill: var(--ink-40);
+  pointer-events: none;
+  user-select: none;
+}
+.landmark .lm-arrow { font-size: 13px; }
+.landmark .lm-sub   { font-size: 9.5px; fill: var(--ink-25); }
+
+/* the second voice waits until it is spoken */
+.voice.is-waiting { opacity: 0.16; transition: opacity 500ms ease; }
+.voice            { transition: opacity 500ms ease; }
+
+/* ---------- footer ---------- */
+
+#footer {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: var(--ink-12);
+  white-space: nowrap;
+  pointer-events: none;
+}
+@media (max-width: 720px) { #footer { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  #thread, #ghost, .node, .halo, #panel, #hint, .voice {
+    transition-duration: 1ms !important;
+  }
+}
+</style>
+
+<svg id="field" aria-label="twenty-four points, joined in order"></svg>
+
+<div id="counter">&mdash; / 24</div>
+
+<div id="panel">
+  <p id="prompt"></p>
+
+  <div class="voice">
+    <span class="voice-name" id="name-a">me</span>
+    <p class="voice-line" id="voice-a"></p>
+  </div>
+
+  <div class="voice" id="block-b">
+    <span class="voice-name" id="name-b">you</span>
+    <p class="voice-line" id="voice-b"></p>
+  </div>
+
+  <div id="sig"></div>
+</div>
+
+<div id="hint">press space to go &mdash; or click</div>
+
+<div id="footer"></div>
+
+<script>
+/* ------------------------------------------------------------------
+   entries.js — the only file you need to edit.
+
+   24 months. 24 things. Each one has two sides: what you say about
+   them, and what they say about you. Nothing here is required to be
+   filled in at once — an empty string just leaves that dot unlit.
+
+   `prompt` is a scaffold, not a rule. Delete it, rewrite it, ignore it.
+   It runs small-and-specific at 01 and whole-person by 24.
+------------------------------------------------------------------ */
+
+var PEOPLE = {
+  a: "me",    // ← your name
+  b: "you"    // ← their name
+};
+
+var TITLE = "twenty-four";
+var SUBTITLE = "two years, said one at a time";
+
+/* Landmarks — the things that aren't one of the 24, but that the two
+   years happened around. They sit out in the empty space at odd angles,
+   some upside down, the way waypoints do on a walking map. Move them,
+   rewrite them, add or delete freely.
+
+   x / y are positions in a 1000x1000 field. rot is degrees. */
+
+var LANDMARKS = [
+  { arrow: "up",    label: "where we met",     sub: "month 01", x: 706, y: 104, rot:  -7 },
+  { arrow: "left",  label: "the long winter",  sub: "month 09", x: 146, y: 296, rot: -34 },
+  { arrow: "right", label: "the trip",         sub: "month 15", x: 892, y: 432, rot: -78 },
+  { arrow: "left",  label: "the bad week",     sub: "month 18", x: 118, y: 648, rot:  11 },
+  { arrow: "down",  label: "your kitchen",     sub: "month 21", x: 208, y: 838, rot: 168 },
+  { arrow: "down",  label: "here",             sub: "month 24", x: 566, y: 902, rot:   4 }
+];
+
+var ENTRIES = [
+  { n:  1, prompt: "a small physical detail — something in how they move",        a: "", b: "" },
+  { n:  2, prompt: "a sound they make",                                            a: "", b: "" },
+  { n:  3, prompt: "something they say constantly and don't notice",               a: "", b: "" },
+  { n:  4, prompt: "a thing they're good at that they'd never list",               a: "", b: "" },
+  { n:  5, prompt: "how they enter a room",                                        a: "", b: "" },
+  { n:  6, prompt: "something they taught you without meaning to",                 a: "", b: "" },
+  { n:  7, prompt: "a thing they find funny that nobody else does",                a: "", b: "" },
+  { n:  8, prompt: "how they are when they're tired",                              a: "", b: "" },
+  { n:  9, prompt: "something they have never once given up on",                   a: "", b: "" },
+  { n: 10, prompt: "a time they were right and you were wrong",                    a: "", b: "" },
+  { n: 11, prompt: "what they do when someone else is sad",                        a: "", b: "" },
+  { n: 12, prompt: "a thing that annoyed you at first and doesn't now",            a: "", b: "" },
+  { n: 13, prompt: "something they made",                                          a: "", b: "" },
+  { n: 14, prompt: "a place that belongs to them",                                 a: "", b: "" },
+  { n: 15, prompt: "how they handle being wrong",                                  a: "", b: "" },
+  { n: 16, prompt: "a thing they protect",                                         a: "", b: "" },
+  { n: 17, prompt: "something they carry that they never asked for",               a: "", b: "" },
+  { n: 18, prompt: "how they've changed in two years",                             a: "", b: "" },
+  { n: 19, prompt: "what hasn't changed at all",                                    a: "", b: "" },
+  { n: 20, prompt: "a thing you'd defend about them to a stranger",                a: "", b: "" },
+  { n: 21, prompt: "something you'd only ever say to their face",                  a: "", b: "" },
+  { n: 22, prompt: "what you would miss first",                                    a: "", b: "" },
+  { n: 23, prompt: "what they are to you now that they weren't at month one",      a: "", b: "" },
+  { n: 24, prompt: "the whole thing. why them.",                                   a: "", b: "" }
+];
+</script>
+
+<script>
 /* twenty-four
  *
  * 24 points on a two-turn spiral: one orbit per year, the second sitting
@@ -313,3 +629,4 @@
 
   go(-1, 0);
 })();
+</script>
