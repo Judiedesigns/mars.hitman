@@ -42,7 +42,14 @@ body{ cursor:pointer; }
 .ui{ position:fixed; z-index:2; }
 
 /* ---------- top left: the count ---------- */
-#head{ top:clamp(1.1rem,3vh,2.2rem); left:clamp(1.1rem,3.4vw,2.8rem); }
+#head{ top:clamp(1.1rem,3vh,2.2rem); left:clamp(1.1rem,3.4vw,2.8rem);
+       width:min(23rem,34vw); }
+#intro{ margin:1.5rem 0 0; font-size:.86rem; line-height:1.62; color:var(--ink-70);
+        max-width:21rem; }
+#intro em{ font-style:italic; }
+#intro .aside{ display:block; margin-top:.75rem; font-family:var(--sans);
+        font-size:9.5px; letter-spacing:.13em; text-transform:uppercase;
+        color:var(--ink-28); line-height:1.8; }
 #count{
   font-family:var(--sans); font-size:10px; letter-spacing:.20em;
   text-transform:uppercase; color:var(--ink-45); margin:0 0 .5rem;
@@ -70,12 +77,12 @@ body{ cursor:pointer; }
 
 /* ---------- bottom left: what was said ---------- */
 #panel{
-  left:clamp(1.1rem,3.4vw,2.8rem); bottom:clamp(1.3rem,4vh,2.6rem);
-  width:min(31rem,52vw);
+  left:50%; top:46%; transform:translate(-50%,-50%);
+  width:min(40rem,74vw); text-align:center;
 }
 #prompt{
   margin:0 0 1.1rem; font-size:clamp(1.02rem,1.55vw,1.24rem);
-  line-height:1.42; max-width:26rem;
+  line-height:1.42; max-width:none;
 }
 #prompt .num{ font-family:var(--sans); font-size:10px; letter-spacing:.18em;
   color:var(--ink-28); display:inline-block; margin-right:.6rem; vertical-align:.18em; }
@@ -87,15 +94,13 @@ body{ cursor:pointer; }
   font-family:var(--sans); font-size:9.5px; letter-spacing:.20em;
   text-transform:uppercase; color:var(--ink-45); display:block; margin-bottom:.28rem;
 }
-.said{ margin:0; font-size:1rem; line-height:1.5; }
+.said{ margin:0; font-size:clamp(1.35rem,2.9vw,2.05rem); line-height:1.42;
+        letter-spacing:-.005em; text-wrap:balance; }
 .said.blank{ color:var(--ink-28); font-style:italic; font-size:.92rem; }
-.said.blank::before{
-  content:""; display:block; width:9.5rem; height:0;
-  border-bottom:1px solid var(--ink-14); margin-bottom:.34rem;
-}
+
 
 /* ---------- bottom right: the score ---------- */
-#score{ right:clamp(1.1rem,3.4vw,2.8rem); bottom:clamp(1.3rem,4vh,2.6rem); text-align:right; }
+#score{ left:clamp(1.1rem,3.4vw,2.8rem); bottom:clamp(1.3rem,4vh,2.6rem); text-align:left; }
 #marks{ display:flex; align-items:flex-end; gap:5px; height:26px; justify-content:flex-end; }
 #marks .gap{ width:15px; }
 #marks i{
@@ -142,6 +147,9 @@ body{ cursor:pointer; }
   #panel{ width:auto; right:clamp(1.1rem,3.4vw,2.8rem); bottom:5.6rem; }
   #prompt{ max-width:none; }
   #score{ left:clamp(1.1rem,3.4vw,2.8rem); right:auto; bottom:1.5rem; text-align:left; }
+  #head{ width:auto; }
+  #intro{ display:none; }
+  #panel{ top:38%; width:86vw; }
   #marks{ justify-content:flex-start; gap:4px; }
   #marks .gap{ width:11px; }
   #years{ justify-content:flex-start; gap:11px; }
@@ -167,6 +175,7 @@ body{ cursor:pointer; }
   <p id="count">— / 24</p>
   <p id="title">twenty-four</p>
   <p id="sub">two years, played out loud</p>
+  <p id="intro"></p>
 </div>
 
 <button class="ui" id="sound" aria-label="mute or unmute the music">
@@ -205,9 +214,9 @@ body{ cursor:pointer; }
 <div id="open">
   <div>
     <h1>twenty-four</h1>
-    <p>Two years, one thing a month, each of us in turn. Every thing said
-       adds a voice to the music. Month one is a single note. By month
-       twenty-four it is a whole piece, and we are still dancing to it.</p>
+    <p>Twenty-four months. One thing for each of them. Every thing said
+       adds a voice to the music — month one is a single note, and by
+       month twenty-four it is a whole piece, still playing.</p>
     <p class="go">the sound is made here in the page, so it starts on your
        press — <b>press space, or click</b></p>
   </div>
@@ -840,12 +849,12 @@ function frame(){
 
   /* --- layout --- */
   var narrow = W < 720;
-  var base = narrow ? H * 0.40 : H * 0.615;
-  var h = Math.min(narrow ? 158 : 232, H * (narrow ? 0.25 : 0.30));
-  var cx = W * 0.5;
-  var sep = h * (1.90 - 0.78 * E);
-  var wanderA = Math.sin(wall * 0.157) * W * 0.13 * (REDUCED ? 0.22 : 1);
-  var wanderB = Math.sin(wall * 0.121 + 1.7) * W * 0.12 * (REDUCED ? 0.22 : 1);
+  var base = narrow ? H * 0.72 : H * 0.845;
+  var h = Math.min(narrow ? 108 : 150, H * (narrow ? 0.17 : 0.20));
+  var cx = narrow ? W * 0.62 : W * 0.775;
+  var sep = h * (1.16 - 0.52 * E);   /* a pair in the footer, not two strangers */
+  var wanderA = Math.sin(wall * 0.157) * W * 0.035 * (REDUCED ? 0.22 : 1);
+  var wanderB = Math.sin(wall * 0.121 + 1.7) * W * 0.032 * (REDUCED ? 0.22 : 1);
 
   groundBase = base;
   figA.h = figB.h = h;
@@ -933,6 +942,12 @@ var elSoundLabel = document.getElementById("soundlabel");
 
 document.getElementById("who-a").textContent = PEOPLE.a;
 document.getElementById("who-b").textContent = PEOPLE.b;
+
+/* the letter's opening, top left — it stays up the whole way through */
+document.getElementById("intro").innerHTML =
+  esc(OPENING) +
+  '<span class="aside">' + esc(HOPE) + '<br>' + esc(PROMISE) + '</span>';
+function esc(t){ return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
 var markEls = [];
 (function buildScore(){
