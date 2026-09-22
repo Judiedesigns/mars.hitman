@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paragraph-first layout explorations</title>
+    <style>
+      @font-face {
+        font-family: "Anonymous Pro";
+        font-style: normal;
+        font-weight: 400;
+        src: url("https://static.figma.com/font/AnonymousPro-Regular_1") format("woff2");
+      }
+
+      :root {
+        --pink: #ff70ff;
+        --soft: #fff1ff;
+        --ink: #282127;
+        --muted: #8d818a;
+        --line: #eee4ec;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #fff;
+        color: var(--ink);
+        font-family: "Anonymous Pro", ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      h1, h2, h3, p { margin: 0; font-weight: 400; }
+
+      .page { width: min(1080px, calc(100vw - 32px)); margin: 0 auto; padding: 48px 0 88px; }
+      .page-intro { display: grid; gap: 10px; margin-bottom: 52px; text-align: center; }
+      .kicker { color: var(--pink); font-size: 11px; text-transform: uppercase; }
+      h1 { font-size: clamp(28px, 4vw, 44px); line-height: 1.05; }
+      .page-intro > p:last-child { max-width: 640px; margin: 0 auto; color: var(--muted); font-size: 13px; line-height: 1.55; }
+      .gallery { display: grid; gap: 68px; }
+      .direction { display: grid; gap: 14px; }
+      .direction-label { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; }
+      .direction-label h2 { font-size: 16px; }
+      .direction-label p { color: var(--muted); font-size: 12px; }
+
+      .preview {
+        min-height: 900px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--pink);
+        padding: 46px 40px 54px;
+      }
+      .preview-title { font-size: clamp(20px, 3vw, 26px); line-height: 1.15; }
+      .letter { max-width: 460px; font-size: clamp(14px, 2vw, 17px); line-height: 1.45; }
+      .signature { margin-top: 18px; font-size: 14px; }
+      .signature::before, .signature::after { content: "*"; margin: 0 9px; }
+      .music { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 22px; font-size: 13px; }
+      .music-controls { letter-spacing: 8px; }
+
+      .orbit {
+        position: relative;
+        width: min(600px, 100%);
+        aspect-ratio: 600 / 520;
+      }
+      .photo {
+        position: absolute;
+        left: 17.625%;
+        top: 22.5%;
+        width: 62.333%;
+        height: 62.692%;
+        background: url("src/imports/Body-1/583807724b86d07a16503e7117efd79409667b02.png") center / cover;
+      }
+      .orbit-number {
+        position: absolute;
+        z-index: 1;
+        color: var(--pink);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: clamp(8px, 1.3vw, 12px);
+        line-height: 1;
+      }
+      .n1{left:49.958%;top:20.577%}.n2{left:57.125%;top:12.115%}.n3{left:67.125%;top:5.962%}
+      .n4{left:79.458%;top:4.615%}.n5{left:90.792%;top:15.769%}.n6{left:93.958%;top:29.423%}
+      .n7{left:91.625%;top:44.038%}.n8{left:86.292%;top:55.192%}.n9{left:80.125%;top:66.346%}
+      .n10{left:71.625%;top:76.923%}.n11{left:60.958%;top:87.308%}.n12{left:49.958%;top:94.423%}
+      .n13{left:38.792%;top:86.538%}.n14{left:28.792%;top:76.731%}.n15{left:20.458%;top:66.923%}
+      .n16{left:11.625%;top:54.231%}.n17{left:6.625%;top:44.231%}.n18{left:5.625%;top:30.192%}
+      .n19{left:7.792%;top:15.769%}.n20{left:15.958%;top:4.615%}.n21{left:28.958%;top:4.423%}
+      .n22{left:38.292%;top:5.962%}.n23{left:43.792%;top:12.115%}.n24{left:49.958%;top:30.385%}
+
+      .centered .preview { display: flex; flex-direction: column; align-items: center; text-align: center; }
+      .centered .letter { margin-top: 32px; }
+      .centered .orbit { margin-top: 38px; }
+
+      .editorial .preview {
+        min-height: 640px;
+        display: grid;
+        grid-template-columns: minmax(220px, 0.72fr) minmax(420px, 1.28fr);
+        grid-template-areas:
+          "copy orbit"
+          ". signature";
+        grid-template-rows: auto auto;
+        column-gap: 38px;
+        align-items: start;
+      }
+      .editorial-copy { grid-area: copy; padding-top: 6px; }
+      .editorial .preview-title { max-width: 300px; }
+      .editorial .letter { margin-top: 34px; text-align: left; }
+      .editorial .orbit { grid-area: orbit; margin: -18px 0 0 auto; }
+      .editorial .signature { grid-area: signature; width: 100%; margin: 6px 0 0; text-align: center; }
+      .editorial .music {
+        grid-area: music;
+        align-self: start;
+        justify-content: space-between;
+        width: 100%;
+        margin: 28px 0 0;
+        padding: 12px 0;
+        border-top: 1px solid var(--pink);
+        border-bottom: 1px solid var(--pink);
+      }
+      .editorial .music-label { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+
+      .masthead .top {
+        display: grid;
+        grid-template-columns: minmax(220px, 0.7fr) minmax(320px, 1.3fr);
+        gap: 58px;
+        align-items: start;
+        padding-bottom: 34px;
+        border-bottom: 1px solid var(--pink);
+      }
+      .masthead .letter { max-width: 520px; }
+      .masthead .signature { text-align: right; }
+      .masthead .orbit { margin: 34px auto 0; }
+
+      .band .preview { padding-left: 0; padding-right: 0; }
+      .band .preview-title { padding: 0 40px; }
+      .band .letter-band {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 44px;
+        align-items: end;
+        margin-top: 30px;
+        padding: 28px 40px;
+        border-top: 1px solid var(--pink);
+        border-bottom: 1px solid var(--pink);
+        background: var(--soft);
+      }
+      .band .letter { max-width: 680px; font-size: clamp(15px, 2vw, 18px); }
+      .band .signature { white-space: nowrap; }
+      .band .orbit { margin: 32px auto 0; }
+
+      @media (max-width: 700px) {
+        .page { width: calc(100vw - 20px); padding-top: 30px; }
+        .page-intro { margin-bottom: 38px; }
+        .gallery { gap: 48px; }
+        .direction-label { display: grid; gap: 4px; padding: 0 2px; }
+        .preview { min-height: auto; padding: 30px 18px 38px; }
+        .editorial .preview {
+          grid-template-columns: 1fr;
+          grid-template-areas: "copy" "orbit" "signature";
+        }
+        .editorial .music { margin: 28px 0 8px; }
+        .editorial .orbit { margin-left: auto !important; }
+        .masthead .top { grid-template-columns: 1fr; gap: 24px; }
+        .masthead .signature { text-align: left; }
+        .band .preview-title { padding: 0 18px; }
+        .band .letter-band { grid-template-columns: 1fr; gap: 8px; padding: 22px 18px; }
+        .band .signature { white-space: normal; }
+        .orbit { margin-top: 24px !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="page-intro">
+        <p class="kicker">Anniversary layout study</p>
+        <h1>Paragraph first, then the orbit.</h1>
+        <p>The copy, photograph, and number positions stay the same. These four options only explore how the opening paragraph can lead into the visual.</p>
+      </header>
+
+      <section class="gallery" aria-label="Paragraph-first layout explorations">
+        <article class="direction centered">
+          <div class="direction-label"><h2>01 / Centered letter</h2><p>Softest and closest to the current page</p></div>
+          <div class="preview">
+            <h3 class="preview-title">Happy 24-month anniversary</h3>
+            <p class="letter">Everything fell in place when we met, it felt like coming home after a long time. Sometimes the stars align, and we can only enjoy the results. I hope I am able to show you every day how much I love you.</p>
+            <div class="orbit" data-orbit></div>
+            <p class="signature">Mars & the Hitman</p>
+            <div class="music"><span>Play music</span><span class="music-controls">◀ ▶ ▶|</span></div>
+          </div>
+        </article>
+
+        <article class="direction editorial">
+          <div class="direction-label"><h2>02 / Editorial offset</h2><p>Copy starts left; the orbit answers on the right</p></div>
+          <div class="preview">
+            <div class="editorial-copy">
+              <h3 class="preview-title">Happy 24-month anniversary</h3>
+              <p class="letter">Everything fell in place when we met, it felt like coming home after a long time. Sometimes the stars align, and we can only enjoy the results. I hope I am able to show you every day how much I love you.</p>
+              <div class="music"><span class="music-label">Our soundtrack</span><span class="music-controls">◀ ▶ ▶|</span></div>
+            </div>
+            <div class="orbit" data-orbit></div>
+            <p class="signature">Mars & her Hitman</p>
+          </div>
+        </article>
+
+        <article class="direction masthead">
+          <div class="direction-label"><h2>03 / Split masthead</h2><p>Title and letter share the opening row</p></div>
+          <div class="preview">
+            <div class="top">
+              <h3 class="preview-title">Happy 24-month anniversary</h3>
+              <div><p class="letter">Everything fell in place when we met, it felt like coming home after a long time. Sometimes the stars align, and we can only enjoy the results. I hope I am able to show you every day how much I love you.</p><p class="signature">Mars & the Hitman</p></div>
+            </div>
+            <div class="orbit" data-orbit></div>
+            <div class="music"><span>Play music</span><span class="music-controls">◀ ▶ ▶|</span></div>
+          </div>
+        </article>
+
+        <article class="direction band">
+          <div class="direction-label"><h2>04 / Letter band</h2><p>The paragraph becomes a clear opening chapter</p></div>
+          <div class="preview">
+            <h3 class="preview-title">Happy 24-month anniversary</h3>
+            <div class="letter-band"><p class="letter">Everything fell in place when we met, it felt like coming home after a long time. Sometimes the stars align, and we can only enjoy the results. I hope I am able to show you every day how much I love you.</p><p class="signature">Mars & the Hitman</p></div>
+            <div class="orbit" data-orbit></div>
+            <div class="music"><span>Play music</span><span class="music-controls">◀ ▶ ▶|</span></div>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      const orbitMarkup = `<div class="photo"></div>${Array.from({ length: 24 }, (_, index) => `<span class="orbit-number n${index + 1}">${index + 1}</span>`).join("")}`;
+      document.querySelectorAll("[data-orbit]").forEach((orbit) => { orbit.innerHTML = orbitMarkup; });
+    </script>
+  </body>
+</html>

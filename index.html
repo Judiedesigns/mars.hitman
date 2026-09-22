@@ -1,38 +1,16 @@
 <!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>twenty-four</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<svg id="field" aria-label="twenty-four points, joined in order"></svg>
-
-<div id="counter">&mdash; / 24</div>
-
-<div id="panel">
-  <p id="prompt"></p>
-
-  <div class="voice">
-    <span class="voice-name" id="name-a">me</span>
-    <p class="voice-line" id="voice-a"></p>
-  </div>
-
-  <div class="voice" id="block-b">
-    <span class="voice-name" id="name-b">you</span>
-    <p class="voice-line" id="voice-b"></p>
-  </div>
-
-  <div id="sig"></div>
-</div>
-
-<div id="hint">press space to go &mdash; or click</div>
-
-<div id="footer"></div>
-
-<script src="entries.js"></script>
-<script src="piece.js"></script>
-</body>
+<html lang="<!-- figma:lang -->">
+  <head>
+    <!-- figma:head-start -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><!-- figma:title --></title>
+    <!-- figma:head-end -->
+  </head>
+  <body>
+    <!-- figma:body-start -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- figma:body-end -->
+  </body>
 </html>

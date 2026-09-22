@@ -1,0 +1,200 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: "Anonymous Pro:Regular";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://static.figma.com/font/AnonymousPro-Regular_1") format("woff2");
+}
+
+@font-face {
+  font-family: "SF Pro:Regular";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://static.figma.com/font/SF-Pro_1") format("woff2");
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes photo-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes star-twinkle {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.38;
+    transform: scale(0.92);
+  }
+}
+
+.anniversary-page {
+  padding: 46px 0 42px;
+}
+
+.anniversary-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.anniversary-title {
+  max-width: calc(100vw - 32px);
+}
+
+.app-fade-in {
+  animation: app-fade-in 700ms ease-out both;
+}
+
+.anniversary-photo {
+  animation: app-fade-in 900ms ease-out 120ms both, photo-breathe 6s ease-in-out 1.1s infinite;
+}
+
+.memory-tooltip {
+  box-shadow: 8px 8px 0 rgba(255, 112, 255, 0.1);
+  animation: app-fade-in 180ms ease-out both;
+}
+
+.month-button {
+  transform-origin: center;
+  transition: background-color 180ms ease, color 180ms ease, padding 180ms ease, transform 180ms ease;
+}
+
+.month-button:active,
+.music-toggle:active {
+  transform: scale(0.96);
+}
+
+.anniversary-copy {
+  margin-bottom: 38px;
+}
+
+.anniversary-footer {
+  position: relative;
+  height: 22px;
+  margin-top: 14px;
+}
+
+.anniversary-signature {
+  text-align: center;
+  margin-top: 0;
+}
+
+.star-twinkle {
+  animation: star-twinkle 3.8s ease-in-out infinite;
+}
+
+.copy-star {
+  left: -76px;
+  top: -5px;
+}
+
+.corner-star {
+  right: 42px;
+  top: 112px;
+}
+
+.music-toggle {
+  position: absolute;
+  right: -52px;
+  width: 28px;
+  height: 28px;
+  margin-top: 0;
+}
+
+.memory-hint {
+  margin-top: 22px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-fade-in,
+  .anniversary-photo,
+  .memory-tooltip,
+  .star-twinkle {
+    animation: none;
+  }
+
+  .month-button {
+    transition: none;
+  }
+
+}
+
+.anniversary-canvas {
+  transform-origin: top left;
+}
+
+@media (max-width: 839px) {
+  .music-toggle {
+    position: static;
+    float: right;
+    transform: translateY(14px);
+  }
+
+  .anniversary-footer {
+    height: 92px;
+  }
+}
+
+@media (max-width: 520px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .anniversary-page {
+    padding-top: 32px;
+    padding-bottom: 34px;
+  }
+
+  .anniversary-title {
+    max-width: calc(100vw - 32px);
+    line-height: 1.15;
+  }
+
+  .anniversary-hero {
+    margin-bottom: 20px;
+  }
+
+  .anniversary-copy {
+    margin-bottom: 28px;
+  }
+
+  .copy-star {
+    left: 18px;
+    top: -28px;
+  }
+
+  .corner-star {
+    right: 36px;
+    top: 118px;
+  }
+
+  .music-toggle {
+    margin-top: 0;
+  }
+
+  .memory-hint {
+    margin-top: 18px;
+  }
+}

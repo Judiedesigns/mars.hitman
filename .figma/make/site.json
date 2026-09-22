@@ -1,0 +1,10 @@
+{
+  "description": "Enhance user engagement with an interactive platform that allows users to fill in missing content, fostering collaboration and creativity.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
