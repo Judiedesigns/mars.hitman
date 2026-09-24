@@ -5,6 +5,7 @@ import imgCouple from "@/imports/Body-1/583807724b86d07a16503e7117efd79409667b02
 
 const PINK = "#ff70ff";
 const STAR_PINK = "#ffd6f5";
+const DEFAULT_VOLUME = 0.6;
 const STAGE_WIDTH = 600;
 const STAGE_HEIGHT = 520;
 const getStageScale = () => {
@@ -162,6 +163,7 @@ export default function App() {
   const [stageScale, setStageScale] = useState(getStageScale);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fadeFrameRef = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
 
   const entrance = (delay: number) => ({
@@ -182,6 +184,7 @@ export default function App() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    audio.volume = DEFAULT_VOLUME;
 
     const removeUnlockListeners = () => {
       window.removeEventListener("pointerdown", unlockAudio);
@@ -207,6 +210,40 @@ export default function App() {
 
     return removeUnlockListeners;
   }, []);
+
+  const stopVolumeFade = () => {
+    if (fadeFrameRef.current !== null) {
+      cancelAnimationFrame(fadeFrameRef.current);
+      fadeFrameRef.current = null;
+    }
+  };
+
+  const fadeAudioIn = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    stopVolumeFade();
+    const startedAt = performance.now();
+    const duration = reduceMotion ? 0 : 1200;
+    const targetVolume = DEFAULT_VOLUME;
+    audio.volume = duration === 0 ? targetVolume : 0;
+
+    if (duration === 0) return;
+
+    const updateVolume = (now: number) => {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const easedProgress = 1 - Math.pow(1 - progress, 3);
+      audio.volume = targetVolume * easedProgress;
+
+      if (progress < 1) {
+        fadeFrameRef.current = requestAnimationFrame(updateVolume);
+      } else {
+        fadeFrameRef.current = null;
+      }
+    };
+
+    fadeFrameRef.current = requestAnimationFrame(updateVolume);
+  };
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -250,8 +287,14 @@ export default function App() {
         src="/audio/so-into-you.mp3"
         preload="auto"
         loop
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+        onPlay={() => {
+          setIsPlaying(true);
+          fadeAudioIn();
+        }}
+        onPause={() => {
+          stopVolumeFade();
+          setIsPlaying(false);
+        }}
       />
 
       <motion.header className="anniversary-hero" {...entrance(0)}>
