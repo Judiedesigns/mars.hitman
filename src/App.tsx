@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import svgPaths from "@/imports/Body-1/svg-jsgx85ywa2";
 import imgCouple from "@/imports/Body-1/583807724b86d07a16503e7117efd79409667b02.png";
 
@@ -89,14 +90,13 @@ function StarWide() {
 }
 
 interface MonthTooltipProps {
-  month: number | null;
+  month: number;
   anchorX: number;
   anchorY: number;
   onClose: () => void;
 }
 
 function MonthTooltip({ month, anchorX, anchorY, onClose }: MonthTooltipProps) {
-  if (!month) return null;
   const tipWidth = month === 4 ? 288 : 252;
   const viewportWidth = typeof window === "undefined" ? 1200 : window.innerWidth;
   const viewportHeight = typeof window === "undefined" ? 800 : window.innerHeight;
@@ -112,12 +112,28 @@ function MonthTooltip({ month, anchorX, anchorY, onClose }: MonthTooltipProps) {
   const top = Math.max(18, shouldLift ? anchorY - 132 : anchorY + 28);
 
   return (
-    <div
+    <motion.div
+      key={month}
       className="memory-tooltip fixed z-50 border border-[#ff70ff] bg-white p-4"
+      initial={{
+        opacity: 0,
+        scale: 0.96,
+        x: opensLeft ? 10 : opensRight ? -10 : 0,
+        y: opensLeft || opensRight ? 0 : 8,
+      }}
+      animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+      exit={{
+        opacity: 0,
+        scale: 0.98,
+        y: 4,
+        transition: { duration: 0.13, ease: [0.23, 1, 0.32, 1] },
+      }}
+      transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
       style={{
         left,
         top,
         width: tipWidth,
+        transformOrigin: opensLeft ? "right center" : opensRight ? "left center" : "center top",
       }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -134,7 +150,7 @@ function MonthTooltip({ month, anchorX, anchorY, onClose }: MonthTooltipProps) {
       >
         {String(month).padStart(2, "0")} - {monthMemories[month]}
       </p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -145,6 +161,16 @@ export default function App() {
   const [hoveredMonth, setHoveredMonth] = useState<number | null>(null);
   const [stageScale, setStageScale] = useState(getStageScale);
   const headerRef = useRef<HTMLDivElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const reduceMotion = useReducedMotion();
+
+  const entrance = (delay: number) => ({
+    initial: reduceMotion ? false : { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0 },
+    transition: reduceMotion
+      ? { duration: 0 }
+      : { duration: 0.46, delay, ease: [0.23, 1, 0.32, 1] as const },
+  });
 
   useEffect(() => {
     const updateStageScale = () => setStageScale(getStageScale());
@@ -153,8 +179,46 @@ export default function App() {
     return () => window.removeEventListener("resize", updateStageScale);
   }, []);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const removeUnlockListeners = () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+
+    const tryPlay = () => {
+      void audio
+        .play()
+        .then(removeUnlockListeners)
+        .catch(() => {
+          // Audible autoplay may be blocked until the first visitor interaction.
+        });
+    };
+
+    const unlockAudio = () => {
+      tryPlay();
+    };
+
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    window.addEventListener("keydown", unlockAudio, { once: true });
+    tryPlay();
+
+    return removeUnlockListeners;
+  }, []);
+
   const togglePlay = () => {
-    setIsPlaying((p) => !p);
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audio.paused) {
+      void audio.play().catch(() => {
+        setIsPlaying(false);
+      });
+    } else {
+      audio.pause();
+    }
   };
 
   const selectMonth = (month: number) => {
@@ -179,18 +243,82 @@ export default function App() {
     <div
       className="anniversary-page bg-white flex flex-col items-center relative min-h-screen overflow-x-hidden"
       style={{ fontFamily: '"Anonymous Pro:Regular", monospace' }}
+      onClick={() => setSelectedMonth(null)}
     >
-      <header className="anniversary-hero app-fade-in">
+      <audio
+        ref={audioRef}
+        src="/audio/so-into-you.mp3"
+        preload="auto"
+        loop
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+      />
+
+      <motion.header className="anniversary-hero" {...entrance(0)}>
         <h1
           className="anniversary-title text-[#ff70ff] text-[24px] leading-[1.15] select-none"
           style={{ fontFamily: '"Anonymous Pro:Regular", monospace' }}
         >
           Happy 24-month anniversary baby
+          <motion.span
+            aria-hidden="true"
+            initial={reduceMotion ? false : { scale: 1 }}
+            animate={
+              reduceMotion || !isPlaying
+                ? { scale: 1 }
+                : { scale: [1, 1.1, 1, 1.05, 1] }
+            }
+            transition={
+              isPlaying
+                ? {
+                    duration: 1.15,
+                    ease: [0.23, 1, 0.32, 1],
+                    repeat: Infinity,
+                    repeatDelay: 1.65,
+                  }
+                : { duration: reduceMotion ? 0 : 0.2 }
+            }
+            style={{
+              display: "inline-flex",
+              marginLeft: 8,
+              position: "relative",
+              top: 1,
+              verticalAlign: "baseline",
+            }}
+          >
+            <AnimatePresence>
+              {selectedMonth && !reduceMotion && (
+                <motion.svg
+                  key={selectedMonth}
+                  className="absolute inset-0 pointer-events-none"
+                  width="20"
+                  height="18"
+                  viewBox="0 0 18 16"
+                  fill="none"
+                  initial={{ opacity: 0.38, scale: 0.88 }}
+                  animate={{ opacity: 0, scale: 1.75 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.62, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  <path
+                    d="M9 15.25C8.78 15.25 8.56 15.17 8.39 15.02C2.7 10.1 0 7.23 0 3.96C0 1.75 1.75 0 3.96 0C5.2 0 6.39.58 7.16 1.5L9 3.7L10.84 1.5C11.61.58 12.8 0 14.04 0C16.25 0 18 1.75 18 3.96C18 7.23 15.3 10.1 9.61 15.02C9.44 15.17 9.22 15.25 9 15.25Z"
+                    fill="#ff70ff"
+                  />
+                </motion.svg>
+              )}
+            </AnimatePresence>
+            <svg width="20" height="18" viewBox="0 0 18 16" fill="none">
+              <path
+                d="M9 15.25C8.78 15.25 8.56 15.17 8.39 15.02C2.7 10.1 0 7.23 0 3.96C0 1.75 1.75 0 3.96 0C5.2 0 6.39.58 7.16 1.5L9 3.7L10.84 1.5C11.61.58 12.8 0 14.04 0C16.25 0 18 1.75 18 3.96C18 7.23 15.3 10.1 9.61 15.02C9.44 15.17 9.22 15.25 9 15.25Z"
+                fill="#ff70ff"
+              />
+            </svg>
+          </motion.span>
         </h1>
-      </header>
+      </motion.header>
 
       {/* Opening letter */}
-      <div className="anniversary-copy flex flex-col items-center px-4 relative">
+      <motion.div className="anniversary-copy flex flex-col items-center px-4 relative" {...entrance(0.08)}>
         <div className="star-twinkle copy-star absolute" aria-hidden="true">
           <StarSmooth />
         </div>
@@ -204,7 +332,7 @@ export default function App() {
         >
           {OPENING}
         </p>
-      </div>
+      </motion.div>
 
       {/* Header: photo + orbit numbers */}
       <div
@@ -221,8 +349,9 @@ export default function App() {
           }}
         >
           {/* Photo — positioned per updated Header/index.tsx, no color overlays */}
-        <div
+          <motion.div
           className="anniversary-photo absolute overflow-hidden"
+          {...entrance(0.3)}
           style={{ left: 105.75, top: 117, width: 374, height: 326 }}
         >
             <img
@@ -230,56 +359,69 @@ export default function App() {
               className="absolute inset-0 size-full object-cover"
               src={imgCouple}
             />
-          </div>
+          </motion.div>
 
           {/* Month numbers as interactive buttons */}
-          {numberPositions.map(({ n, x, y }) => {
-            const isHovered = hoveredMonth === n;
-            const isSelected = selectedMonth === n;
-            return (
-              <button
-              key={n}
-              className="month-button absolute text-[12px] leading-[16px] whitespace-nowrap cursor-pointer select-none"
-              style={{
-                left: x,
-                top: y,
-                  fontFamily: '"SF Pro:Regular", ui-sans-serif, system-ui, sans-serif',
-                  fontVariationSettings: '"wdth" 100',
-                color: isHovered || isSelected ? "#fff" : PINK,
-                background: isHovered || isSelected ? PINK : "transparent",
-                padding: isHovered || isSelected ? "2px 5px" : "2px 2px",
-                transform: isHovered ? "scale(1.24)" : "scale(1)",
-                zIndex: isHovered ? 10 : 1,
-              }}
-                onClick={() => {
-                  if (selectedMonth === n) {
-                    setSelectedMonth(null);
-                    return;
-                  }
+          <motion.div className="absolute inset-0" {...entrance(0.18)}>
+            {numberPositions.map(({ n, x, y }) => {
+              const isHovered = hoveredMonth === n;
+              const isSelected = selectedMonth === n;
+              return (
+                <motion.button
+                  key={n}
+                  className="month-button absolute text-[12px] leading-[16px] whitespace-nowrap cursor-pointer select-none"
+                  whileHover={reduceMotion ? undefined : { scale: 1.12 }}
+                  whileTap={reduceMotion ? undefined : { scale: 0.94 }}
+                  animate={isSelected && !reduceMotion ? { scale: [1, 1.14, 1.06] } : { scale: 1 }}
+                  transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
+                  style={{
+                    left: x,
+                    top: y,
+                    fontFamily: '"SF Pro:Regular", ui-sans-serif, system-ui, sans-serif',
+                    fontVariationSettings: '"wdth" 100',
+                    color: isHovered || isSelected ? "#fff" : PINK,
+                    background: isHovered || isSelected ? PINK : "transparent",
+                    padding: isHovered || isSelected ? "2px 5px" : "2px 2px",
+                    zIndex: isHovered ? 10 : 1,
+                  }}
+                  onClick={(event) => {
+                    event.stopPropagation();
 
-                  selectMonth(n);
-                }}
-                onMouseEnter={() => setHoveredMonth(n)}
-                onMouseLeave={() => setHoveredMonth(null)}
-                title={`Month ${n}`}
-              >
-                {n}
-              </button>
-            );
-          })}
+                    if (selectedMonth === n) {
+                      setSelectedMonth(null);
+                      return;
+                    }
+
+                    selectMonth(n);
+                  }}
+                  onMouseEnter={() => setHoveredMonth(n)}
+                  onMouseLeave={() => setHoveredMonth(null)}
+                  title={`Month ${n}`}
+                >
+                  {n}
+                </motion.button>
+              );
+            })}
+          </motion.div>
 
         </div>
       </div>
 
-      <MonthTooltip
-        month={selectedMonth}
-        anchorX={tooltipAnchor.x}
-        anchorY={tooltipAnchor.y}
-        onClose={() => setSelectedMonth(null)}
-      />
+      <AnimatePresence>
+        {selectedMonth && (
+          <MonthTooltip
+            key={selectedMonth}
+            month={selectedMonth}
+            anchorX={tooltipAnchor.x}
+            anchorY={tooltipAnchor.y}
+            onClose={() => setSelectedMonth(null)}
+          />
+        )}
+      </AnimatePresence>
 
-      <div
+      <motion.div
         className="anniversary-footer"
+        {...entrance(0.34)}
         style={{ width: STAGE_WIDTH * stageScale }}
       >
         <p
@@ -293,25 +435,64 @@ export default function App() {
           Mars & the Hitman
         </p>
 
-        <button
+        <motion.button
           className="music-toggle flex items-center justify-center hover:opacity-60 transition-opacity"
           style={{ top: -(STAGE_HEIGHT - 180) * stageScale }}
+          whileTap={reduceMotion ? undefined : { scale: 0.9 }}
+          transition={{ type: "spring", duration: 0.22, bounce: 0.15 }}
           onClick={togglePlay}
           title={isPlaying ? "Pause music" : "Play music"}
           aria-label={isPlaying ? "Pause music" : "Play music"}
         >
-          {isPlaying ? (
-            <svg width="12" height="15" viewBox="0 0 12 15" fill="none" aria-hidden="true">
-              <rect width="4" height="15" fill={PINK} />
-              <rect x="8" width="4" height="15" fill={PINK} />
-            </svg>
-          ) : (
-            <svg width="13" height="16" viewBox="0 0 13 16" fill="none" aria-hidden="true">
-              <path d="M13 8L0 16V0L13 8Z" fill={PINK} />
-            </svg>
-          )}
-        </button>
-      </div>
+          <AnimatePresence>
+            {isPlaying && !reduceMotion && (
+              <motion.span
+                key="music-start-ring"
+                className="absolute inset-0 rounded-full border border-[#ff70ff] pointer-events-none"
+                initial={{ opacity: 0.45, scale: 0.75 }}
+                animate={{ opacity: 0, scale: 1.75 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.55, ease: [0.23, 1, 0.32, 1] }}
+                aria-hidden="true"
+              />
+            )}
+          </AnimatePresence>
+          <AnimatePresence mode="wait" initial={false}>
+            {isPlaying ? (
+              <motion.svg
+                key="pause"
+                width="12"
+                height="15"
+                viewBox="0 0 12 15"
+                fill="none"
+                aria-hidden="true"
+                initial={reduceMotion ? false : { opacity: 0, scale: 0.86 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.86 }}
+                transition={{ duration: 0.12 }}
+              >
+                <rect width="4" height="15" fill={PINK} />
+                <rect x="8" width="4" height="15" fill={PINK} />
+              </motion.svg>
+            ) : (
+              <motion.svg
+                key="play"
+                width="13"
+                height="16"
+                viewBox="0 0 13 16"
+                fill="none"
+                aria-hidden="true"
+                initial={reduceMotion ? false : { opacity: 0, scale: 0.86 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.86 }}
+                transition={{ duration: 0.12 }}
+              >
+                <path d="M13 8L0 16V0L13 8Z" fill={PINK} />
+              </motion.svg>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </motion.div>
 
       <div className="star-twinkle corner-star fixed pointer-events-none" aria-hidden="true">
         <StarWide />

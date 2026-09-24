@@ -14,27 +14,6 @@
   src: url("https://static.figma.com/font/SF-Pro_1") format("woff2");
 }
 
-@keyframes app-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes photo-breathe {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-}
-
 @keyframes star-twinkle {
   0%,
   100% {
@@ -48,7 +27,7 @@
 }
 
 .anniversary-page {
-  padding: 46px 0 42px;
+  padding: 64px 0 42px;
 }
 
 .anniversary-hero {
@@ -63,27 +42,13 @@
   max-width: calc(100vw - 32px);
 }
 
-.app-fade-in {
-  animation: app-fade-in 700ms ease-out both;
-}
-
-.anniversary-photo {
-  animation: app-fade-in 900ms ease-out 120ms both, photo-breathe 6s ease-in-out 1.1s infinite;
-}
-
 .memory-tooltip {
-  box-shadow: 8px 8px 0 rgba(255, 112, 255, 0.1);
-  animation: app-fade-in 180ms ease-out both;
+  box-shadow: 6px 6px 0 rgba(255, 112, 255, 0.07);
 }
 
 .month-button {
   transform-origin: center;
-  transition: background-color 180ms ease, color 180ms ease, padding 180ms ease, transform 180ms ease;
-}
-
-.month-button:active,
-.music-toggle:active {
-  transform: scale(0.96);
+  transition: background-color 180ms ease, color 180ms ease, padding 180ms ease;
 }
 
 .anniversary-copy {
@@ -117,7 +82,7 @@
 
 .music-toggle {
   position: absolute;
-  right: -52px;
+  right: -92px;
   width: 28px;
   height: 28px;
   margin-top: 0;
@@ -128,9 +93,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-fade-in,
-  .anniversary-photo,
-  .memory-tooltip,
   .star-twinkle {
     animation: none;
   }
@@ -163,7 +125,7 @@
   }
 
   .anniversary-page {
-    padding-top: 32px;
+    padding-top: 44px;
     padding-bottom: 34px;
   }
 
