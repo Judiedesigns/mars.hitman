@@ -157,6 +157,7 @@ function MonthTooltip({ month, anchorX, anchorY, onClose }: MonthTooltipProps) {
 
 export default function App() {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [visitOrder, setVisitOrder] = useState<number[]>([]);
   const [tooltipAnchor, setTooltipAnchor] = useState({ x: 0, y: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
   const [hoveredMonth, setHoveredMonth] = useState<number | null>(null);
@@ -165,6 +166,7 @@ export default function App() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const fadeFrameRef = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
+  const visitedMonths = new Set(visitOrder);
 
   const entrance = (delay: number) => ({
     initial: reduceMotion ? false : { opacity: 0, y: 10 },
@@ -264,6 +266,7 @@ export default function App() {
     const scale = rect ? rect.width / STAGE_WIDTH : 1;
 
     setSelectedMonth(month);
+    setVisitOrder((current) => (current.includes(month) ? current : [...current, month]));
     setTooltipAnchor({
       x: (rect?.left ?? 0) + (position?.x ?? STAGE_WIDTH / 2) * scale,
       y: (rect?.top ?? 0) + (position?.y ?? STAGE_HEIGHT / 2) * scale,
@@ -541,15 +544,25 @@ export default function App() {
         <StarWide />
       </div>
 
-      {/* Hint text */}
-      {!selectedMonth && (
+      {/* Hint and completion text */}
+      {visitedMonths.size === 24 ? (
+        <motion.p
+          className="memory-hint text-[#ff70ff] text-[12px] pointer-events-none select-none"
+          style={{ fontFamily: '"Anonymous Pro:Regular", monospace' }}
+          initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+          animate={{ opacity: 0.78, y: 0 }}
+          transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+        >
+          24 reasons, and somehow still not enough.
+        </motion.p>
+      ) : !selectedMonth ? (
         <p
           className="memory-hint text-[#ff70ff] text-[11px] opacity-50 pointer-events-none select-none"
           style={{ fontFamily: '"Anonymous Pro:Regular", monospace' }}
         >
           tap a number to read a memory
         </p>
-      )}
+      ) : null}
 
       <style>{`
         @keyframes bounce-bar-1 { to { height: 20px; } }
